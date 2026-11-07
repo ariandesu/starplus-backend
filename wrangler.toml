@@ -12,9 +12,36 @@ database_id = "9bb87c70-4c20-4b02-bc8f-299667595bcd"
 [vars]
 ENVIRONMENT = "production"
 
+[[ratelimits]]
+name = "RATE_LIMIT_AUTH"
+namespace_id = "1001"
+simple = { limit = 10, period = 60 }
+
+[[ratelimits]]
+name = "RATE_LIMIT_API"
+namespace_id = "1002"
+simple = { limit = 60, period = 60 }
+
 # Recompute WATCH signals every 6 hours (the 72h window slides even without new readings).
 [triggers]
 crons = ["0 */6 * * *"]
+
+[env.staging]
+vars = { ENVIRONMENT = "staging" }
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "starplus-db-staging"
+database_id = "PLACEHOLDER-run-npx-wrangler-d1-create-starplus-db-staging"
+
+[[env.staging.ratelimits]]
+name = "RATE_LIMIT_AUTH"
+namespace_id = "2001"
+simple = { limit = 10, period = 60 }
+
+[[env.staging.ratelimits]]
+name = "RATE_LIMIT_API"
+namespace_id = "2002"
+simple = { limit = 60, period = 60 }
 
 [observability]
 enabled = true

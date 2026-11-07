@@ -1,0 +1,21 @@
+id_column: astronaut_id
+label_column: sick/fit
+phase_column:
+  source: mission_phase
+  pattern: "^(preflight|inflight|surface|postflight)_(?:L-|day|R\\+)?(-?\\d+)$"
+columns:
+  systolic_bp_mmHg: { code: blood_pressure_systolic }
+  diastolic_bp_mmHg: { code: blood_pressure_diastolic }
+  blood_glucose_mg_dL: { code: blood_glucose }
+  core_body_temp_C: { code: temperature_c }
+  heart_rate_bpm: { code: heart_rate }
+  hrv_rmssd_ms: { code: hrv_rmssd }
+  spo2_percent: { code: oxygen_saturation }
+  respiratory_rate_bpm: { code: respiratory_rate }
+  sleep_duration_h: { code: sleep_hours }
+  sleep_quality_score_0_100: { code: sleep_quality }
+  mood_score_0_100: { code: mood_score }
+  physical_activity_min_per_day: { code: physical_activity }
+  body_mass_kg: { code: body_mass }
+  hydration_urine_specific_gravity: { code: urine_specific_gravity }
+  stress_score_0_100: { code: stress_score }

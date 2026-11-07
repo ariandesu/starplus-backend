@@ -1,7 +1,26 @@
 # Design deviations
 
 Proposed entries need the author's approval before they take effect. Anything
-touching HANDOFF section 5 needs approval before merging (none below does).
+touching HANDOFF section 5 needs approval before merging.
+
+## 2026-11-08 — limit entries gain an optional `max` bound (proposed, needs approval before merge)
+
+*   **Design section:** Fixed implementation decisions ("Catalog limit shape")
+    and the Safety limits table.
+*   **What the design says:** limits are `{level, op, value, source}`; a value
+    matching any critical entry is critical, else any watch entry is watch.
+*   **What is implemented instead:** entries may carry an optional numeric
+    `max`; a value matches only if the comparison holds and
+    (`max` undefined or value ≤ `max`). No limit value, level or source
+    changed. Bounded watch bands use it: heart rate 111–130, respiratory
+    21–24, SpO2 92–93, systolic 91–100.
+*   **Why:** the specified shape cannot express the table's bounded bands. A
+    bare `{>=, 92}` watch ray also matches 97, which the table leaves nominal.
+    This is additive and backward compatible; the loader still accepts the
+    specified shape.
+*   **Rule impact:** safety-limit evaluation is involved, so this needs the
+    author's approval before merge. No limit value, level or citation changed.
+*   **Status:** proposed — waiting for author approval.
 
 ## 2026-11-08 — demo scenes run on staging, not in demo mode (proposed)
 

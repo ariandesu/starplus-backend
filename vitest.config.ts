@@ -16,7 +16,7 @@ export default defineConfig({
         test: {
           name: "unit",
           environment: "node",
-          include: ["test/**/*.test.ts"],
+          include: ["test/**/*.test.ts", "core/test/**/*.test.ts"],
           exclude: ["test/routes/**/*.test.ts"],
         },
       },
@@ -33,6 +33,7 @@ export default defineConfig({
                 wrangler: { configPath: "./wrangler.toml" },
                 miniflare: {
                   bindings: { TEST_MIGRATIONS: migrations },
+                  vars: { API_KEY: "test-admin-key" },
                 },
               },
             },
