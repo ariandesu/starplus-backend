@@ -10,9 +10,10 @@
 - Note on item 11: design docs copied into the backend repo (`docs/designs/`); the workspace originals stay in place.
 
 ## 2. Commits
-- Backend `phase-0` branch, author `ariandesu <mahirfaisalarian@gmail.com>`, no co-author lines.
-- Frontend `phase-0` branch, same author.
-- (SHAs recorded at merge time below.)
+- Backend `phase-0` → `main`: `f016bd5` + report update (`3526806`). Author `ariandesu <mahirfaisalarian@gmail.com>`, no co-author lines.
+- Frontend `phase-0` → `main`: `2899a97`. Same author.
+- Worker version: `1e9df736-da36-4bc7-a20f-bb14652474da` (`https://starplus-backend.shareflow.workers.dev`, `GET /api/health` → `{"status":"ok"}`).
+- Frontend: Vercel auto-builds `main`; home page returns 200.
 
 ## 3. Gate commands and results
 - Backend: `npm test` — 2 files, 17 tests passed (checksum 1, logic 16).
