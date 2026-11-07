@@ -32,8 +32,7 @@ export default defineConfig({
               workers: {
                 wrangler: { configPath: "./wrangler.toml" },
                 miniflare: {
-                  bindings: { TEST_MIGRATIONS: migrations },
-                  vars: { API_KEY: "test-admin-key" },
+                  bindings: { TEST_MIGRATIONS: migrations, API_KEY: "test-admin-key" },
                 },
               },
             },
