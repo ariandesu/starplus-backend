@@ -33,7 +33,7 @@ crons = []
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "starplus-db-staging"
-database_id = "PLACEHOLDER-run-npx-wrangler-d1-create-starplus-db-staging"
+database_id = "a164514c-82fb-461a-b5a7-5b515b1f02e6"
 
 [[env.staging.ratelimits]]
 name = "RATE_LIMIT_AUTH"
