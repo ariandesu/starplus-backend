@@ -11,3 +11,10 @@ database_id = "9bb87c70-4c20-4b02-bc8f-299667595bcd"
 
 [vars]
 ENVIRONMENT = "production"
+
+# Recompute WATCH signals every 6 hours (the 72h window slides even without new readings).
+[triggers]
+crons = ["0 */6 * * *"]
+
+[observability]
+enabled = true
