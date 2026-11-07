@@ -1,6 +1,8 @@
-# Phase 1 progress — core logic, model, server (2026-11-08, branch `phase-1`, NOT merged)
+# Phase 1 progress — core logic, model, server (2026-11-08, MERGED)
 
-Blocked on the author (see §7). No SHAs of this report's own commit are recorded.
+Gate: PASS. Backend `main` `ba77e28..82c7809` (fast-forward), frontend
+`main` `f5ffb37..b05bd21`. No commit's own ID was recorded inside itself;
+ranges above were filled in afterwards.
 
 ## 0. Audit fixes (author decisions 2026-11-08, commit after `db2bd98`)
 
@@ -71,12 +73,19 @@ Blocked on the author (see §7). No SHAs of this report's own commit are recorde
   `backups/2026-11-08-staging-pre-0003.sql`, migrations 0001–0003 applied
   (`wrangler d1 migrations apply starplus-db-staging --env staging
   --remote`), all ✅.
-- Production: NOT yet applied (next step after this commit).
+- Production: backup `backups/2026-11-08-prod-pre-0003.sql` + bookmark,
+  migration 0003 applied (`d1 migrations apply starplus-db --remote`),
+  deployed from `main`: Worker version
+  `dc595874-2609-4f54-a716-1012b5c74b2a`,
+  `GET /api/health` → `{"status":"ok","d1":"ok"}`; old routes 200;
+  new routes answer 401 without a session; CORS + `X-Request-Id` present.
+  Frontend `main` auto-built by Vercel; home page 200.
 
-## 5. Deviations
+## 5. Deviations (both APPROVED 2026-11-08)
 
-- `max` bound on limit entries (proposed, needs approval before merge).
-- F4 demo-on-staging proposal still awaiting approval (Phase 0 fixes).
+- `max` bound on limit entries (approved; guarded by the 25-value
+  boundary test).
+- F4 demo-on-staging (approved; demo script updated).
 
 ## 6. Known bugs / not verified
 
@@ -91,15 +100,14 @@ Blocked on the author (see §7). No SHAs of this report's own commit are recorde
 - `wrangler deploy --dry-run` re-verified after the server rewrite at
   deploy time.
 
-## 7. Blocked on the author — staging secret + codes
+## 7. Author steps remaining — secret + codes
 
-- Staging worker deployed from `phase-1` (identical to merge result):
-  `starplus-backend-staging` version `656e641e`,
-  `GET /api/health` → `{"status":"ok","d1":"ok",...,"environment":"staging"}`;
-  old routes unchanged; new routes answer 401 without a session.
+- Staging worker deployed: `starplus-backend-staging` version `656e641e`,
+  `GET /api/health` → staging ok; old routes unchanged; new routes answer
+  401 without a session.
+- Production worker deployed from `main`: version `dc595874` (see §4).
 - Still needed from the author:
   1. `npx wrangler secret put API_KEY --env staging` (staging authed
      paths cannot be verified until this exists).
   2. Issue access codes for test and real crew.
-- After the merge + production deploy below, both environments are ready
-  for codes.
+- Both environments are otherwise ready for codes.
