@@ -2,6 +2,22 @@
 
 Blocked on the author (see §7). No SHAs of this report's own commit are recorded.
 
+## 0. Audit fixes (author decisions 2026-11-08, commit after `db2bd98`)
+
+- Both deviations APPROVED; `max` stays with the 25-value boundary test.
+- P1: inflight shifts in catalog (`temperature_c` +1.0 citing Stahn 2017,
+  `blood_pressure_systolic` −14 citing Circulation 2019) with citation
+  fields and offset tests; limits unchanged (boundary test).
+- P2: `POST /api/auth` accepts `shared: boolean` → 24-hour expiry; route
+  tests for both TTLs.
+- P3: `[env.staging.triggers] crons = []`.
+- P4: `/api/auth` returns 503 + logs an error when the rate-limit binding
+  is missing in production/staging (test path preserved via the pool's
+  `TEST_MIGRATIONS` binding); unit-tested.
+- P5: refuted estimates live in the metric's own row
+  (`values.refuted[]`); one row per metric.
+- F4: demo script updated to staging scenes; deviations marked approved.
+
 ## 1. Design items (Phase 1: 12–39)
 
 - Done: 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
@@ -27,9 +43,9 @@ Blocked on the author (see §7). No SHAs of this report's own commit are recorde
 
 ## 3. Gate commands and results (local)
 
-- Backend: `npm test` — 12 files, 67 tests pass. `npm run typecheck`
+- Backend: `npm test` — 12 files, 72 tests pass. `npm run typecheck`
   (both configs) clean. `npm run lint` clean.
-- `npx vitest run --coverage --project unit` — exit 0, lines 88.9% (gate:
+- `npx vitest run --coverage --project unit` — exit 0, lines 88.6% (gate:
   ≥85% on `core/`). Coverage cannot run under the routes project
   (`node:inspector`, known pool limitation), hence `--project unit`.
 - Rehearse: `ml/rehearse.py` green (cv 0.89, heldout 0.85);
@@ -39,10 +55,13 @@ Blocked on the author (see §7). No SHAs of this report's own commit are recorde
   cases). Placeholder `model_version` 0.0.1, provenance `synthetic`.
 - `ml/time_series.py` → `ml/out/` (gitignored); `apply-catalog-patch.ts`
   verified on a copy (version bump, limits byte-identical). Catalog v1
-  ships WITHOUT the patch (no offsets), exactly as the design's Phase 1
-  leaves it.
-- Frontend: typecheck, lint clean; `npm test` 5 files, 32 pass;
+  ships with the two curated inflight offsets (P1); empirical patch not
+  applied.
+- Frontend: typecheck, lint clean; `npm test` 5 files, 35 pass;
   `npm run build` (`--webpack`) succeeds.
+- CI: backend `phase-1` green (tests, rehearse, coverage). Frontend
+  `phase-1` green except the cross-repo sha check, which passes once
+  backend `main` has the new `core/`.
 
 ## 4. Migrations
 
