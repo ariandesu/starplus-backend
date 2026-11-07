@@ -4,7 +4,6 @@ import { computeSignal, parseD1Time, type Point } from "../src/watch";
 
 const NOW = Date.parse("2026-11-07T12:00:00Z");
 const HOUR = 3_600_000;
-const DAY = 24 * HOUR;
 
 describe("validateVitals", () => {
   const now = new Date(NOW);

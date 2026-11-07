@@ -11,8 +11,11 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["@cloudflare/workers-types"]
+    "types": ["node", "@cloudflare/workers-types"],
+    "paths": {
+      "@starplus/core": ["./core/src/index.ts"]
+    }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "core/**/*.ts", "test/**/*.ts", "tools/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,0 +1,9 @@
+{
+  "name": "@starplus/core",
+  "version": "0.0.0-phase0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
