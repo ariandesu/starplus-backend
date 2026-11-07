@@ -1,33 +1,18 @@
+import { defineWorkersProject, readD1Migrations } from "@cloudflare/vitest-pool-workers/config";
 import { defineConfig } from "vitest/config";
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = dirname(fileURLToPath(import.meta.url));
+const alias = {
+  "@starplus/core": join(root, "core/src/index.ts"),
+};
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      "@starplus/core": join(root, "core/src/index.ts"),
-    },
-  },
   test: {
     projects: [
       {
-        extends: true,
-        test: {
-          name: "routes",
-          pool: "@cloudflare/vitest-pool-workers",
-          poolOptions: {
-            workers: {
-              wrangler: { configPath: "./wrangler.toml" },
-            },
-          },
-          include: ["test/routes/**/*.test.ts"],
-          setupFiles: ["test/setup/apply-migrations.ts"],
-        },
-      },
-      {
-        extends: true,
+        resolve: { alias },
         test: {
           name: "unit",
           environment: "node",
@@ -35,6 +20,25 @@ export default defineConfig({
           exclude: ["test/routes/**/*.test.ts"],
         },
       },
+      defineWorkersProject(async () => {
+        const migrations = await readD1Migrations("./migrations");
+        return {
+          resolve: { alias },
+          test: {
+            name: "routes",
+            include: ["test/routes/**/*.test.ts"],
+            setupFiles: ["test/setup/apply-migrations.ts"],
+            poolOptions: {
+              workers: {
+                wrangler: { configPath: "./wrangler.toml" },
+                miniflare: {
+                  bindings: { TEST_MIGRATIONS: migrations },
+                },
+              },
+            },
+          },
+        };
+      }),
     ],
     coverage: {
       provider: "v8",

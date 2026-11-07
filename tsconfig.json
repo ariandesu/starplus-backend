@@ -7,15 +7,16 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "verbatimModuleSyntax": true,
     "esModuleInterop": true,
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["node", "@cloudflare/workers-types"],
+    "types": ["@cloudflare/workers-types"],
     "paths": {
       "@starplus/core": ["./core/src/index.ts"]
     }
   },
-  "include": ["src/**/*.ts", "core/**/*.ts", "test/**/*.ts", "tools/**/*.ts"],
+  "include": ["src/**/*.ts", "core/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
