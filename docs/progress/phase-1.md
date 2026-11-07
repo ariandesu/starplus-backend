@@ -65,9 +65,13 @@ Blocked on the author (see §7). No SHAs of this report's own commit are recorde
 
 ## 4. Migrations
 
-- 0003 created, additive, old tables untouched. NOT applied yet: rule 8
-  backup + apply needs the author's staging first (staging, then
-  production).
+- 0003 created, additive, old tables untouched. Rule-8 backups in
+  `backups/` (gitignored).
+- Staging: time-travel bookmark recorded, empty-DB export
+  `backups/2026-11-08-staging-pre-0003.sql`, migrations 0001–0003 applied
+  (`wrangler d1 migrations apply starplus-db-staging --env staging
+  --remote`), all ✅.
+- Production: NOT yet applied (next step after this commit).
 
 ## 5. Deviations
 
@@ -87,11 +91,15 @@ Blocked on the author (see §7). No SHAs of this report's own commit are recorde
 - `wrangler deploy --dry-run` re-verified after the server rewrite at
   deploy time.
 
-## 7. Blocked on the author — STOP
+## 7. Blocked on the author — staging secret + codes
 
-1. Approve the `max`-bound deviation (safety limits) and the F4 deviation.
-2. Create staging: `npx wrangler d1 create starplus-db-staging` (put the id
-   in `[env.staging]`), then `npx wrangler secret put API_KEY --env staging`.
-3. Issue access codes for test and real crew (`POST /api/admin/codes`).
-4. After that I will: backup + apply 0003 to staging then production,
-   deploy, smoke-test, merge both repos, and update this report.
+- Staging worker deployed from `phase-1` (identical to merge result):
+  `starplus-backend-staging` version `656e641e`,
+  `GET /api/health` → `{"status":"ok","d1":"ok",...,"environment":"staging"}`;
+  old routes unchanged; new routes answer 401 without a session.
+- Still needed from the author:
+  1. `npx wrangler secret put API_KEY --env staging` (staging authed
+     paths cannot be verified until this exists).
+  2. Issue access codes for test and real crew.
+- After the merge + production deploy below, both environments are ready
+  for codes.
