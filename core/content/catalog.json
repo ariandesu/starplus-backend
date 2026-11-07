@@ -35,8 +35,9 @@
         { "level": "watch", "op": ">=", "value": 91, "max": 100, "source": "NEWS2 (Royal College of Physicians, 2017): single-parameter score 2" },
         { "level": "watch", "op": ">=", "value": 140, "source": "ACC/AHA 2017: stage 2 hypertension" }
       ],
-      "limit_source": "NEWS2 low values; ACC/AHA 2017 stage 2 hypertension (140) and hypertensive crisis (180) for high values.",
-      "phase_offsets": {},
+      "limit_source": "NEWS2 low values; ACC/AHA 2017 stage 2 hypertension (140) and hypertensive crisis (180) for high values. Systolic pressure falls about 14 mmHg by six months in flight (Circulation 2019); the limits are never shifted.",
+      "phase_offsets": { "inflight": { "baseline_shift": -14 } },
+      "phase_offset_source": "Systolic pressure falls about 14 mmHg by six months in flight (Circulation 2019).",
       "sd_floor": 4,
       "min_baseline_readings": 5,
       "body_system": "cardiovascular",
@@ -96,7 +97,8 @@
         { "level": "watch", "op": ">=", "value": 39.1, "source": "NEWS2 (Royal College of Physicians, 2017): single-parameter score 2" }
       ],
       "limit_source": "NEWS2 (Royal College of Physicians, 2017). In-flight temperature runs about 1 °C higher (Stahn et al., Scientific Reports 2017); the limit is never shifted.",
-      "phase_offsets": {},
+      "phase_offsets": { "inflight": { "baseline_shift": 1.0 } },
+      "phase_offset_source": "Core body temperature in long-duration flight rises about 1 °C (Stahn et al., Scientific Reports 2017).",
       "sd_floor": 0.2,
       "min_baseline_readings": 5,
       "body_system": "metabolic",

@@ -4,6 +4,7 @@ import { error, json, readJsonObject } from "./http.ts";
 
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const SESSION_TTL_MS = 30 * 24 * 3_600_000;
+const SHARED_SESSION_TTL_MS = 24 * 3_600_000;
 
 export interface Session {
   crew_id: string;
@@ -130,7 +131,8 @@ export async function handleAuth(request: Request, env: Env, requestId: string):
   if (!crew) return error(401, "Unauthorized", request, requestId);
   const token = randomToken();
   const now = new Date();
-  const expires_at = new Date(now.getTime() + SESSION_TTL_MS).toISOString();
+  const ttl = body !== null && body.shared === true ? SHARED_SESSION_TTL_MS : SESSION_TTL_MS;
+  const expires_at = new Date(now.getTime() + ttl).toISOString();
   await env.DB.batch([
     env.DB.prepare("UPDATE access_codes SET used_at = ? WHERE code_hash = ?").bind(now.toISOString(), row.code_hash),
     env.DB.prepare(

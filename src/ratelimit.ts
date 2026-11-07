@@ -23,6 +23,16 @@ export async function checkRateLimit(
 }
 
 export async function checkAuthLimit(request: Request, env: Env, requestId: string): Promise<Response | null> {
+  if (!env.RATE_LIMIT_AUTH) {
+    if (
+      (env.ENVIRONMENT === "production" || env.ENVIRONMENT === "staging") &&
+      env.TEST_MIGRATIONS === undefined
+    ) {
+      console.error(`rate-limit binding RATE_LIMIT_AUTH is missing in ${env.ENVIRONMENT}`);
+      return error(503, "Rate limiting unavailable", request, requestId);
+    }
+    return null;
+  }
   return checkRateLimit(env.RATE_LIMIT_AUTH, `ip:${clientIp(request)}`, request, requestId);
 }
 

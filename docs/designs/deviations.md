@@ -3,7 +3,7 @@
 Proposed entries need the author's approval before they take effect. Anything
 touching HANDOFF section 5 needs approval before merging.
 
-## 2026-11-08 — limit entries gain an optional `max` bound (proposed, needs approval before merge)
+## 2026-11-08 — limit entries gain an optional `max` bound (APPROVED 2026-11-08)
 
 *   **Design section:** Fixed implementation decisions ("Catalog limit shape")
     and the Safety limits table.
@@ -20,9 +20,11 @@ touching HANDOFF section 5 needs approval before merging.
     specified shape.
 *   **Rule impact:** safety-limit evaluation is involved, so this needs the
     author's approval before merge. No limit value, level or citation changed.
-*   **Status:** proposed — waiting for author approval.
+*   **Status:** APPROVED by the author 2026-11-08. The `max` bound stays.
+    Condition: the 25-value boundary check in `core/test/assess.test.ts`
+    ("limit boundaries match the design table") guards the bounded bands.
 
-## 2026-11-08 — demo scenes run on staging, not in demo mode (proposed)
+## 2026-11-08 — demo scenes run on staging, not in demo mode (APPROVED 2026-11-08)
 
 *   **Design section:** `docs/demo-script.md` (Phase 0, item 10); Critical User Journeys
     CUJ 1, 2, 4, 6, 7, 8; "Storage, sync and identity" (outbox disabled in demo mode).
@@ -41,5 +43,5 @@ touching HANDOFF section 5 needs approval before merging.
 *   **Rule impact:** none. No safety limit, model, schema, API or secrets change.
     Demo data stays out of crew tables per rule 6 (staging crew rows carry
     provenance `synthetic`).
-*   **Status:** proposed — waiting for author approval. `docs/demo-script.md` is
-    unchanged until approved.
+*   **Status:** APPROVED by the author 2026-11-08. `docs/demo-script.md`
+    updated to match.

@@ -7,4 +7,6 @@ export interface Env {
   RATE_LIMIT_API: RateLimit;
   /** R2 bucket for image attachments (stretch). */
   ATTACHMENTS?: R2Bucket;
+  /** Bound only by the vitest pool; marks the test path for rate-limit checks. */
+  TEST_MIGRATIONS?: unknown[];
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { assess, inputsHash, type AssessContext } from "../src/assess.ts";
+import type { OverallStatus } from "../src/record.ts";
 import { lookupMeasure } from "../src/catalog.ts";
 import type { Measurement } from "../src/record.ts";
 
@@ -73,6 +74,53 @@ describe("colour rule", () => {
     expect(critical.overall_status).toBe("critical");
   });
 
+  it("limit boundaries match the design table", async () => {
+    const cases: Array<[string, number, OverallStatus]> = [
+      ["oxygen_saturation", 96, "insufficient"],
+      ["oxygen_saturation", 94, "insufficient"],
+      ["oxygen_saturation", 93, "watch"],
+      ["oxygen_saturation", 92, "watch"],
+      ["oxygen_saturation", 91, "critical"],
+      ["heart_rate", 110, "insufficient"],
+      ["heart_rate", 111, "watch"],
+      ["heart_rate", 130, "watch"],
+      ["heart_rate", 131, "critical"],
+      ["heart_rate", 40, "critical"],
+      ["blood_pressure_systolic", 101, "insufficient"],
+      ["blood_pressure_systolic", 100, "watch"],
+      ["blood_pressure_systolic", 90, "critical"],
+      ["blood_pressure_systolic", 139, "insufficient"],
+      ["blood_pressure_systolic", 140, "watch"],
+      ["blood_pressure_systolic", 180, "critical"],
+      ["temperature_c", 39.0, "insufficient"],
+      ["temperature_c", 39.1, "watch"],
+      ["temperature_c", 35.0, "critical"],
+      ["respiratory_rate", 20, "insufficient"],
+      ["respiratory_rate", 21, "watch"],
+      ["respiratory_rate", 25, "critical"],
+      ["blood_glucose", 69, "watch"],
+      ["blood_glucose", 53, "critical"],
+      ["blood_glucose", 200, "watch"],
+    ];
+    expect(cases).toHaveLength(25);
+    for (const [metric, value, expected] of cases) {
+      const result = await assess([measurement(metric, value, 1)], context());
+      expect(result.overall_status, `${metric} ${value}`).toBe(expected);
+    }
+  });
+
+  it("in-flight offsets shift the baseline but never the limits", async () => {
+    const oldPhase = BASELINE_HOURS.map((hours) => measurement("temperature_c", 36.8, hours, { phase: "preflight" }));
+    const current = [60, 48, 36, 24, 12, 1].map((hours) => measurement("temperature_c", 37.8, hours));
+    const result = await assess([...oldPhase, ...current], context());
+    expect(result.overall_status).toBe("nominal");
+    expect(result.per_measure[0].reason_code).toBe("within_limits");
+    const hot = await assess([measurement("temperature_c", 39.1, 1)], context({ phase: "inflight" }));
+    expect(hot.overall_status).toBe("watch");
+    const crisis = await assess([measurement("blood_pressure_systolic", 180, 1)], context({ phase: "inflight" }));
+    expect(crisis.overall_status).toBe("critical");
+  });
+
   it("limits beat the baseline and the baseline never lowers a limit", async () => {
     const history = [...baseline("heart_rate", 70), ...windowAt("heart_rate", 70)];
     const latest = measurement("heart_rate", 190, 0.5);
@@ -141,12 +189,14 @@ describe("colour rule", () => {
     expect(confirmed.per_measure[0].values.confirm_required).toBe(false);
   });
 
-  it("keeps a refuted estimate without changing the colour", async () => {
+  it("keeps a refuted estimate inside the metric's own row", async () => {
     const estimate = measurement("heart_rate", 128, 3, { is_estimate: 1 });
     const device = measurement("heart_rate", 72, 1, { supersedes_client_id: estimate.client_id });
     const result = await assess([estimate, device], context());
-    expect(result.overall_status).toBe("nominal");
-    expect(result.per_measure.some((entry) => entry.reason_code === "refuted_estimate")).toBe(true);
+    expect(result.overall_status).toBe("insufficient");
+    const rows = result.per_measure.filter((entry) => entry.metric === "heart_rate");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].values.refuted).toEqual([{ client_id: estimate.client_id, value: 128 }]);
   });
 
   it("the model never changes a colour", async () => {

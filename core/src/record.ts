@@ -87,6 +87,7 @@ export interface PerMeasureResult {
     z_score: number | null;
     trend: "rising" | "falling" | "stable" | null;
     confirm_required: boolean;
+    refuted: Array<{ client_id: string; value: number | string }>;
   };
 }
 

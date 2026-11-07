@@ -32,4 +32,14 @@ describe("checkRateLimit", () => {
     await checkApiLimit(request("/api/sync", { Authorization: "Bearer tok-1" }), env, "r2");
     expect(seen).toEqual(["ip:10.9.0.1", "token:tok-1"]);
   });
+
+  it("returns 503 when the auth binding is missing outside tests", async () => {
+    const prod = { ENVIRONMENT: "production" } as unknown as Env;
+    const res = await checkAuthLimit(request("/api/auth"), prod, "r3");
+    expect(res?.status).toBe(503);
+    const testEnv = { ENVIRONMENT: "production", TEST_MIGRATIONS: [] } as unknown as Env;
+    expect(await checkAuthLimit(request("/api/auth"), testEnv, "r4")).toBeNull();
+    const dev = { ENVIRONMENT: "dev" } as unknown as Env;
+    expect(await checkAuthLimit(request("/api/auth"), dev, "r5")).toBeNull();
+  });
 });

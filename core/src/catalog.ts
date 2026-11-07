@@ -45,6 +45,7 @@ export interface CatalogMeasure {
   limits: CatalogLimit[];
   limit_source: string;
   phase_offsets: Record<string, { baseline_shift: number }>;
+  phase_offset_source?: string;
   sd_floor: number | null;
   min_baseline_readings: number;
   body_system: string;

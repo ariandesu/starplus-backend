@@ -86,19 +86,24 @@ export async function assess(
     byMetric.set(record.metric, group);
   }
 
-  const refuted = history.filter(
-    (record) =>
-      record.voided === 0 &&
-      superseded.has(record.client_id) &&
-      record.is_estimate === 1 &&
-      record.value_num !== null &&
-      (() => {
-        const measure = lookup(record.metric);
-        if (!measure) return false;
-        const hit = limitStatus(measure, record.value_num);
-        return hit !== null && hit.status !== "nominal";
-      })()
-  );
+  const refutedByMetric = new Map<string, Array<{ client_id: string; value: number | string }>>();
+  for (const record of history) {
+    if (
+      record.voided !== 0 ||
+      !superseded.has(record.client_id) ||
+      record.is_estimate !== 1 ||
+      record.value_num === null
+    ) {
+      continue;
+    }
+    const measure = lookup(record.metric);
+    if (!measure) continue;
+    const hit = limitStatus(measure, record.value_num);
+    if (hit === null || hit.status === "nominal") continue;
+    const group = refutedByMetric.get(record.metric) ?? [];
+    group.push({ client_id: record.client_id, value: record.value_num });
+    refutedByMetric.set(record.metric, group);
+  }
 
   const per_measure: PerMeasureResult[] = [];
 
@@ -212,28 +217,7 @@ export async function assess(
         z_score,
         trend,
         confirm_required,
-      },
-    });
-  }
-
-  for (const record of refuted) {
-    const measure = lookup(record.metric);
-    if (!measure || record.value_num === null) continue;
-    per_measure.push({
-      metric: record.metric,
-      status: "nominal",
-      status_source: "safety_limit",
-      reason_code: "refuted_estimate",
-      values: {
-        value: record.value_num,
-        unit: record.unit,
-        client_id: record.client_id,
-        baseline_mean: null,
-        baseline_n: 0,
-        window_mean: null,
-        z_score: null,
-        trend: null,
-        confirm_required: false,
+        refuted: refutedByMetric.get(metric) ?? [],
       },
     });
   }

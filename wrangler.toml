@@ -28,6 +28,8 @@ crons = ["0 */6 * * *"]
 
 [env.staging]
 vars = { ENVIRONMENT = "staging" }
+[env.staging.triggers]
+crons = []
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "starplus-db-staging"

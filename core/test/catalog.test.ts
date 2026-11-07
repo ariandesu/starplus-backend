@@ -57,6 +57,14 @@ describe("catalog", () => {
     expect(validateCatalog(raw).ok).toBe(false);
   });
 
+  it("carries cited in-flight baseline shifts for temperature and systolic", () => {
+    const temp = lookupMeasure("temperature_c")!;
+    expect(temp.phase_offsets.inflight).toEqual({ baseline_shift: 1.0 });
+    expect(temp.phase_offset_source).toMatch(/Stahn/);
+    const systolic = lookupMeasure("blood_pressure_systolic")!;
+    expect(systolic.phase_offsets.inflight).toEqual({ baseline_shift: -14 });
+    expect(systolic.phase_offset_source).toMatch(/Circulation/);
+  });
   it("rejects a catalog with a missing body system", () => {
     const raw = JSON.parse(JSON.stringify({ catalog_version: "1", measures: CATALOG.measures }));
     raw.measures[0].body_system = "";

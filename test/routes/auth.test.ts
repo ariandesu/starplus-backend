@@ -45,6 +45,25 @@ describe("admin and auth", () => {
     expect(res.status).toBe(401);
   });
 
+  it("gives shared devices a 24-hour session and others 30 days", async () => {
+    const day = 24 * 3_600_000;
+    const issue = async () => {
+      const made = await post("/api/admin/codes", { crew_id: "auth-crew" }, adminHeaders());
+      return ((await made.json()) as { code: string }).code;
+    };
+    const login = async (payload: Record<string, unknown>) => {
+      const res = await post("/api/auth", payload);
+      expect(res.status).toBe(200);
+      return ((await res.json()) as { expires_at: string }).expires_at;
+    };
+    const now = Date.now();
+    const sharedExpiry = Date.parse(await login({ code: await issue(), device_id: "shared-1", shared: true }));
+    expect(sharedExpiry - now).toBeGreaterThan(day - 60_000);
+    expect(sharedExpiry - now).toBeLessThan(day + 60_000);
+    const normalExpiry = Date.parse(await login({ code: await issue(), device_id: "device-3" }));
+    expect(normalExpiry - now).toBeGreaterThan(30 * day - 60_000);
+  });
+
   it("revokes sessions and codes", async () => {
     const issued = await post("/api/admin/codes", { crew_id: "auth-crew" }, adminHeaders());
     const { code } = (await issued.json()) as { code: string };
