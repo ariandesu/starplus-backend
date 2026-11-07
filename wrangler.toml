@@ -1,0 +1,13 @@
+# wrangler.toml — STAR PLUS Backend (Cloudflare Workers + D1)
+name = "starplus-backend"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "starplus-db"
+database_id = ""
+
+[vars]
+ENVIRONMENT = "production"
