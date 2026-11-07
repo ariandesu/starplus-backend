@@ -1,0 +1,32 @@
+{
+  "formulary_version": "1",
+  "entries": [
+    {
+      "id": "acetaminophen",
+      "name": "Acetaminophen (paracetamol)",
+      "purpose": "Fever reducer and mild-to-moderate pain reliever.",
+      "side_effects": "Liver injury in overdose or with regular alcohol use; rare serious skin reactions.",
+      "interactions": "Warfarin effect may increase with regular use; many combination products already contain it — total daily amount counts.",
+      "dose": "per flight surgeon / mission protocol",
+      "citations": [{ "source": "U.S. National Library of Medicine, DailyMed: acetaminophen drug label." }]
+    },
+    {
+      "id": "ibuprofen",
+      "name": "Ibuprofen",
+      "purpose": "Non-steroidal anti-inflammatory for pain, fever and inflammation.",
+      "side_effects": "Stomach pain, heartburn, fluid retention; cardiovascular and gastrointestinal risk rises with dose and duration; kidney injury in dehydration.",
+      "interactions": "Avoid combining with other NSAIDs; caution with blood-pressure medicines, lithium and anticoagulants.",
+      "dose": "per flight surgeon / mission protocol",
+      "citations": [{ "source": "U.S. National Library of Medicine, DailyMed: ibuprofen drug label." }]
+    },
+    {
+      "id": "loratadine",
+      "name": "Loratadine",
+      "purpose": "Second-generation antihistamine for allergy symptoms.",
+      "side_effects": "Usually well tolerated; occasional headache, dry mouth or drowsiness.",
+      "interactions": "Few known interactions; check against the mission formulary before combining sedating medicines.",
+      "dose": "per flight surgeon / mission protocol",
+      "citations": [{ "source": "U.S. National Library of Medicine, DailyMed: loratadine drug label." }]
+    }
+  ]
+}

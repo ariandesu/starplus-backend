@@ -17,6 +17,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
+      - run: npx tsx tools/check-citations.ts
       - run: npm test
       - run: pip install -r ml/requirements.txt
       - run: npm run rehearse
