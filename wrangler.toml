@@ -7,7 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "starplus-db"
-database_id = ""
+database_id = "9bb87c70-4c20-4b02-bc8f-299667595bcd"
 
 [vars]
 ENVIRONMENT = "production"
