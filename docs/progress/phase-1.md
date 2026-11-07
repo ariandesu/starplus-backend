@@ -1,6 +1,6 @@
 # Phase 1 progress — core logic, model, server (2026-11-08, MERGED)
 
-Gate: PASS. Backend `main` `ba77e28..82c7809` (fast-forward), frontend
+Gate: PASS. Backend `main` `ba77e28..6205aab` (fast-forward), frontend
 `main` `f5ffb37..b05bd21`. No commit's own ID was recorded inside itself;
 ranges above were filled in afterwards.
 
