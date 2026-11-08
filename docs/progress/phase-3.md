@@ -258,3 +258,33 @@ Not run (needs author-held secrets and codes):
    `core/content/explain-cache.json` with `reviewed` items only.
 5. Then: merge both repos, deploy staging then production, smoke-test both
    (the Phase 3 gate also ends the minimum version with a production deploy).
+
+## 1i. Explanation review fixes (review-2026-11-08-explanations: T1–T3)
+
+- `core/content/explain-cache.json` committed exactly as generated
+  (27 reviewed, 6 rejected); shipped to the app via `sync-core.sh`.
+- T1: `getExplanation(entryId, level)` (`frontend/src/lib/kb.ts`)
+  recomputes the `sha256(id + "\n" + text.join("\n"))` +
+  `:standard+simple:<model>:prompts-v1` key and returns text only when
+  `status === "reviewed"`. "Explain more simply" shows the reviewed simple
+  text with the AI label; anything else shows the source text labelled
+  "From the cited source" with no AI label. Unit tests: reviewed entry
+  returns AI text, rejected entry and edited source fall back
+  (`frontend/test/explain-cache.test.ts`). Fixed the vitest
+  `@starplus/core` alias to exact-match so subpath JSON imports resolve.
+- T2: `tools/prompts/explain-entry.md` now requires keeping every qualifier
+  word for word (normal/normally, at least, no sooner than, only if, never,
+  do not, at once); the "normal"/"fine" ban applies only to describing the
+  reader's own results. `core/explain/filters.ts` gained a must-keep check
+  (word boundaries, case-insensitive, ordered words with gaps allowed;
+  source count or more required) and flags "normal"/"fine" as softening
+  only when the source lacks them. Three must-reject eval cases appended
+  to `tools/eval/cases.json`. `PROMPT_VERSION` unchanged (recorded in
+  `docs/designs/deviations.md`).
+- T3: `pregenerate` logs each rejection, skips that entry, writes the
+  cache after every entry, and exits non-zero if anything was skipped
+  (reviewed entries are still skipped cleanly).
+- Counts (no retries, no fixme): unit 76 frontend + 88 backend pass;
+  filter eval green; typecheck, lint, `build:staging` green; offline
+  suite 2 passed Chromium, 2 passed WebKit. CUJ suite NOT run locally
+  (needs staging codes; the auditor reruns it).
