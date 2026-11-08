@@ -102,13 +102,23 @@ formulary citation check green.
   round-trips simulator bytes, incl. 16-bit heart rate, kPa→mmHg,
   °F→°C, lb→kg; reserved SFLOAT/FLOAT/weight rejected; catalog units;
   truncated input rejected.
-- `test/voice.test.ts` (28 tests): numbers to thousands, decimals,
-  negatives, rejections; keyword extraction, BP pairs and the 11-phrase table.
+- `test/voice.test.ts` (38 tests): numbers to thousands, decimals,
+  negatives, rejections; keyword extraction, BP pairs and the 17-phrase table.
+
+## Z1 fix (audit-2026-11-08-phase5b, do not merge)
+
+- `parseSpokenNumber`: a units word (one–nine) followed directly by a tens
+  word (ten–ninety, with an optional units word) or by "oh" plus a units
+  word reads as hundreds: "one thirty five" = 135, "one oh five" = 105,
+  "two ten" = 210. "Thirty five" and "one hundred thirty five" unchanged.
+- Tests: 135/85, 105/70, 140/90, 95/60, "pulse one oh two" = 102,
+  "thirty five" = 35.
+- bluetooth-voice.spec.ts 3/3 on Chromium and WebKit.
 
 ## Counts
 
-- Frontend unit 178/178 (incl. 14 gamification, BLE reserved/unit/glucose
-  and 11-phrase voice coverage); backend 106/106 (incl. 14 gamification,
+- Frontend unit 188/188 (incl. 14 gamification, BLE reserved/unit/glucose
+  and 17-phrase voice coverage); backend 106/106 (incl. 14 gamification,
   3 progress route).
 - Typecheck clean both repos; lint 0 errors (2 pre-existing demo
   warnings); citation check ok; `build:staging` clean with /check/bluetooth,
