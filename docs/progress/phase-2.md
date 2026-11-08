@@ -1,8 +1,9 @@
 # Phase 2 progress — storage, login, self-check, emergency, content (2026-11-08, MERGED)
 
-Gate: PASS (auditor ran the live gate on staging: 4/4). Backend and frontend
-`main` fast-forwarded from `phase-2`. No commit's own ID is recorded inside
-itself; final ranges below were filled in afterwards.
+Gate: PASS (auditor ran the live gate on staging: 4/4). Backend `main`
+`e9b2928..7426573`, frontend `main` `b05bd21..aba9132` (fast-forward). No
+commit's own ID was recorded inside itself; final ranges here were filled
+in afterwards.
 
 ## 1. Design items (Phase 2: 40–57)
 
@@ -67,8 +68,9 @@ None in Phase 2 beyond the two approved in `docs/designs/deviations.md`.
 
 ## 7. Deploys
 
-- Staging worker from `main`, version recorded in the follow-up commit;
+- Staging worker from `main`, version `5e0dbfc5`;
   `/api/health` ok with `d1: "ok"`, environment `staging`.
-- Production worker from `main`; `/api/health` ok; old routes unchanged;
+- Production worker from `main`, version `3c285be3`;
+  `/api/health` ok; old routes unchanged;
   new routes answer 401 without a session.
 - Frontend `main` auto-built by Vercel; home page 200.
