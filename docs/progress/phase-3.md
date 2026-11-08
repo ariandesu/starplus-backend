@@ -288,3 +288,14 @@ Not run (needs author-held secrets and codes):
   filter eval green; typecheck, lint (2 pre-existing warnings), `build:staging` green; offline
   suite 2 passed Chromium, 2 passed WebKit. CUJ suite NOT run locally
   (needs staging codes; the auditor reruns it).
+
+## 1i. Final gate fix (audit-2026-11-08-phase3k: V1 core resync)
+
+- V1: ran `tools/sync-core.sh` so the U2 filter change reached the app;
+  `diff -r starplus-backend/core starplus-frontend/core` is empty.
+  Committed `core/` in both repos (backend `61d855b`, frontend
+  `1eb0eb0`), both as `ariandesu` with no co-author trailer.
+- CI green on `phase-3` in both repos:
+  backend https://github.com/ariandesu/starplus-backend/actions/runs/42474549289
+  frontend https://github.com/ariandesu/starplus-frontend/actions/runs/42474552044
+- Also filed the missing `audit-2026-11-08-phase3i.md` alongside phase3k.
