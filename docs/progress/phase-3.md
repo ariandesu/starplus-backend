@@ -172,9 +172,32 @@ do NOT merge until the auditor reruns the CUJ suite and the load test.
   reconnecting. The CUJ reconnect step (no Send now tap) is unchanged
   and covers the live path with fresh codes.
 - Counts (no retries, no fixme): offline suite 2 passed Chromium,
-  2 passed WebKit. Unit: 69 frontend + 88 backend pass. Typecheck, lint,
-  `build:staging` clean. CUJ suite NOT run locally (needs staging codes;
-  the auditor reruns it).
+  2 passed WebKit. Unit: 72 frontend (incl. 14 sync + 8 session) and
+  88 backend pass. Typecheck, lint, `build:staging` clean. CUJ suite NOT
+  run locally (needs staging codes; the auditor reruns it).
+
+## 1g. Gate rerun fixes (audit-2026-11-08-phase3h: R1 live updates, R2 forced follow-up, R3 banner)
+
+- R1: new `onSynced` listener registry in `outbox-sync.ts` (same pattern
+  as `onQueued`). `requestOutboxSync` fires it after any send that changed
+  something (`sent > 0`, `failed > 0`, or any item's state/error changed,
+  detected via an outbox fingerprint); the `onQueued` hook also fires it
+  on every enqueue. `/reports` and the emergency queued screen subscribe
+  and re-read on sync and on `visibilitychange` visible, so a background
+  send updates the screen without a manual refresh.
+- R2: `dirtyForce` carries force into the follow-up send, so a "Send now"
+  or `online` trigger that lands mid-send still sends immediately instead
+  of waiting out the backoff the failed send just set.
+- R3: the waiting banner reads "sending when the link is up" whenever any
+  session exists (`hasActiveSession()`), keeping "log in to send it" only
+  when logged out. The emergency queued screen shows "Report sent" once
+  the outbox no longer holds it.
+- Tests: `onSynced` fires after a delivering send and not after a no-op;
+  forced follow-up after a failing send; banner copy covered by the CUJ
+  reconnect assertions. Counts (no retries, no fixme): offline suite
+  2 passed Chromium, 2 passed WebKit. Unit: 72 frontend + 88 backend
+  pass. Typecheck, lint, `build:staging` clean. CUJ suite NOT run
+  locally (needs staging codes; the auditor reruns it).
 
 ## 2. Checks (local, no codes needed)
 
