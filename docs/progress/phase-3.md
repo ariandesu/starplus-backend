@@ -83,7 +83,7 @@ do NOT merge until the auditor reruns the CUJ suite and the load test.
 - M3: renamed the second offline test to "…to the self-check page" (it
   navigates to `/check`, not `/result`).
 
-### M2 evidence (Chromium intermittent offline-navigation miss; app exonerated)
+### M2 evidence (Chromium intermittent offline navigation; corrected by N1)
 
 - Symptom: ~1 in 5 runs, one offline `page.goto` resolves with no error
   but the URL does not change (e.g. `NAV[2] /check now=/login`). Retries
@@ -100,19 +100,31 @@ do NOT merge until the auditor reruns the CUJ suite and the load test.
   reverted page reports `type: "reload"` for the previous page's URL.
   The only automatic reload in the bundle is @serwist/next's injected
   `window.addEventListener("online", () => location.reload())`: a
-  spurious `online` event during Playwright's offline emulation aborts
-  the in-flight navigation and reloads the current (previous) page.
-  No app code navigates on load (verified: no router/location calls on
-  the affected pages except user-initiated submits).
-- Conclusion: test-harness/environment interaction, not an app serving
-  bug — the service worker returns the correct 200 document for every
-  affected navigation (including during missed runs), the CUJ suite
-  passes consistently on both browsers, and WebKit runs the same loop
-  green with no retries. No app change made for M2.
-- Local counts after the fix (no retries anywhere): Chromium 3 runs —
-  loop test fixme-skipped ×3, in-app test passed ×3; WebKit 3 runs —
-  2 passed ×3 (both tests, all 15 routes incl. never-visited queries).
-  The auditor reruns CUJ (Chromium + WebKit) + load test.
+  spurious `online` event during offline emulation aborts the in-flight
+  navigation and reloads the current (previous) page.
+- First conclusion (wrong): harness-only artifact, test quarantined.
+  Correction per audit-2026-11-08-phase3e (N1): it is a real app bug —
+  on the station the link drops and returns constantly, and the reload
+  wipes a half-done self-check (auditor reproduced live). Fixed with
+  `reloadOnOnline: false` in `next.config.ts`; `test.fixme` removed;
+  new env-gated e2e test `test/e2e/offline-form.spec.ts` (login, type
+  offline, reconnect, assert no reload and value intact).
+
+## 1d. Gate rerun fixes (audit-2026-11-08-phase3e: N1 reload on reconnect, N2 login errors)
+
+- N1: `reloadOnOnline: false` in `withSerwistInit` (`next.config.ts`), so
+  coming back online never reloads the page. Outbox flush is unaffected —
+  it is user-initiated (`Send now` on `/reports`), not reload-driven; the
+  CUJ reconnect flow (queue emergency offline, deliver after reconnect)
+  covers it and the auditor reruns it with fresh codes.
+- N2: `login()` (`src/lib/session.ts`) now throws a distinct message per
+  case — no response (network/CORS/offline): "Can't reach the server…Your
+  code has not been used."; 401: "That code did not work…"; 429: "Too
+  many tries…"; anything else: generic. The login page surfaces the thrown
+  message. Unit tests cover all four cases (`test/session.test.ts`).
+  `/settings` shows the API host ("Server: …") so a build pointed at the
+  wrong backend is visible. `npm run build:staging` added to
+  `package.json` and used in the staging gate commands above.
 
 ## 2. Checks (local, no codes needed)
 
@@ -130,7 +142,7 @@ Not run (needs author-held secrets and codes):
 1. CUJ suite against staging, one project at a time (each Playwright project
    burns its own single-use code; codes for stg-astro-1 and stg-fmo-1 remain,
    plus one for stg-load-1 once created):
-   `NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev npm run build && NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev STARPLUS_STAGING_CODE_ASTRO=<code> npx playwright test test/e2e/cuj.spec.ts --project=chromium`
+   `npm run build:staging && NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev STARPLUS_STAGING_CODE_ASTRO=<code> npx playwright test test/e2e/cuj.spec.ts --project=chromium`
    (`npx playwright install chromium webkit` first if needed; rerun with a
    fresh code for `--project=webkit`).
 2. Create the dedicated load-test crew first (`POST /api/admin/crew` with
