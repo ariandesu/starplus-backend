@@ -1,0 +1,203 @@
+{
+  "cache_version": 1,
+  "entries": {
+    "76b3a31b93e877bdc6ce6a4b339d799d3b0de683da4a0218143a5fd73e6e2325:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Suspect anaphylaxis with sudden hives, swelling of lips or tongue, wheeze, or collapse after a sting, food or medicine.\nUse the person's epinephrine auto-injector into the outer mid-thigh at once.\nCall for the crew medical officer.\nLay the person flat with legs raised.\nSit them up only if breathing is hard.\nRoll to the side if vomiting.\nWatch for a second wave for hours.\nUse any further medicine only as directed by the crew medical officer or mission protocol.",
+      "simple": "Look for sudden hives after a sting, food or medicine.\nLook for swelling of lips or tongue after a sting, food or medicine.\nLook for wheeze after a sting, food or medicine.\nLook for collapse after a sting, food or medicine.\nUse the person's epinephrine auto-injector into the outer mid-thigh at once.\nCall for the crew medical officer.\nLay the person flat with legs raised.\nSit them up only if breathing is hard.\nRoll to the side if vomiting.\nWatch for a second wave for hours.\nUse any further medicine only as directed by the crew medical officer or mission protocol.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "262d0875585649b640704652229e705e953056d052f158d216dc3c51a923de9d:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Press hard on the wound with a dressing or cloth. Do not lift it to look. If blood soaks through, add more dressing on top. Keep pressing. If a limb wound will not stop, apply a tourniquet above the wound. Tighten until bleeding stops. Note the time. Lay the person down. Keep them warm. Get the crew medical officer at once.",
+      "simple": "Press hard on the wound with a cloth. Do not lift the cloth to look. If blood soaks through, add more cloth on top. Keep pressing. If a limb wound will not stop, apply a tourniquet above the wound. Tighten it until bleeding stops. Note the time. Lay the person down. Keep the person warm. Get the crew medical officer at once.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "5e4e33a77a4302eba10f51d1424a5a2919c41baf141d7bff74978b90e0439eb9:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Stop the burning. Remove from heat. Smother flames. Cool with running water for at least 10 minutes. Remove jewellery near the burn. Remove loose clothing near the burn. Do not remove what is stuck to the skin. Cover loosely with cling film or a clean non-fluffy dressing. Do not pop blisters. Do not apply creams. Get the crew medical officer at once if the burn is larger than the person's palm. Get the crew medical officer at once if the burn is on face, hands, feet or joints. Get the crew medical officer at once if there is any breathing difficulty.",
+      "simple": "Stop the burn. Move away from heat. Smother flames. Cool with running water for at least 10 minutes. Take off jewellery near the burn. Take off loose clothing near the burn. Leave what is stuck to the skin. Cover loosely with cling film or a clean non-fluffy dressing. Do not pop blisters. Do not apply creams. Get the crew medical officer at once for a burn larger than the person's palm. Get the crew medical officer at once for a burn on the face, hands, feet or joints. Get the crew medical officer at once for any breathing difficulty.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "e19dd77bbc83f9ec44e8f2ffeffd84c4857160b8fc20e6360141ebf033cb1f03:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Stop all activity. Sit the person down to rest. Keep them calm. Keep them still. Ask about the pain. Check for pressure. Check for spread to arm, neck or jaw. Check for sweating. Check for nausea. Check for breathlessness. Give aspirin only if the mission protocol covers it. Do not give aspirin if there is allergy. Never delay the call for help over medicine. Get the crew medical officer at once. Get the emergency loop at once. Prepare for CPR if they collapse.",
+      "simple": "Stop all activity. Sit the person down to rest. Keep them calm and still. Ask about the pain. Look for pressure. Look for spread to arm, neck or jaw. Look for sweating. Look for nausea. Look for breathlessness. Give aspirin only if the mission protocol covers it and there is no allergy. Never wait to call for help to give medicine. Get the crew medical officer at once. Get the emergency loop at once. Be ready for CPR if they collapse.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "rejected"
+    },
+    "441ab44e21378d9093d595803ac227768815e5b4bba13b92b9dc7f7bf7198fe9:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Ask: are you choking?\nIf they can cough forcefully, encourage coughing. Watch closely.\nIf they cannot speak, cough or breathe, give up to 5 back blows. Give blows between the shoulder blades. Use the heel of the hand.\nIf blows fail, give up to 5 abdominal thrusts. Place fist above the navel. Pull quick inward and upward.\nAlternate 5 blows and 5 thrusts.\nIf they collapse, start CPR. Call for the crew medical officer.",
+      "simple": "Ask if they are choking.\nIf they can cough hard, tell them to keep coughing. Keep watching them.\nIf they cannot speak, cough or breathe, hit the back. Give up to 5 hits between the shoulder blades. Use the heel of the hand.\nIf back hits do not work, push on the belly. Give up to 5 pushes. Make a fist above the navel. Pull fast in and up.\nKeep switching between 5 back hits and 5 belly pushes.\nIf they collapse, start CPR. Call for the crew medical officer.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "fec03b9b43f54cb5594c80db0ca8368287f4003850c45b640f49c71bd677222c:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "If there is no breathing, start compressions at once.\nPlace the heel of the hand on the centre of the chest.\nPush 100 to 120 per minute.\nPush 5 to 6 cm deep.\nAllow full recoil between pushes.\nGive 30 compressions then 2 rescue breaths.\nKeep pauses minimal.\nAttach the AED as soon as it arrives.\nFollow its voice prompts.\nClear the person before any shock.\nDo not stop except to swap rescuers, follow the AED, or on signs of life.\nHand over to the crew medical officer.",
+      "simple": "If the person is not breathing, start compressions at once.\nPut the heel of the hand on the centre of the chest.\nPush 100 to 120 per minute.\nPush 5 to 6 cm deep.\nLet the chest come fully back up between pushes.\nDo 30 pushes then give 2 rescue breaths.\nKeep pauses very short.\nAttach the AED as soon as it arrives.\nFollow its voice prompts.\nMove away from the person before any shock.\nDo not stop except to swap rescuers, follow the AED, or on signs of life.\nHand over to the crew medical officer.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "rejected"
+    },
+    "2e1b55396605ef3c52bab0bc333ee54b2c432d8d8d9c6212cf1bc4df77c537e3:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Catch the fall safely.\nLay the person flat.\nRaise the legs slightly.\nLoosen tight clothing.\nLet fresh air reach them.\nMost fainting passes within a minute or two.\nIf they do not wake quickly, treat as unresponsive.\nGet the crew medical officer.\nAfter recovery, sit up slowly.\nCheck for injury from the fall.\nLog the episode.",
+      "simple": "Catch the fall so it is safe.\nLay the person flat.\nLift the legs a little.\nLoosen tight clothing.\nLet fresh air reach them.\nMost fainting passes within a minute or two.\nIf they do not wake quickly, treat as unresponsive.\nGet the crew medical officer.\nSit up slowly after recovery.\nCheck for injury from the fall.\nLog the episode.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "d86805a7d77366af1805778793e5b1756e5e032e3544d871035c2b0b8db4f0b2:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Low blood sugar.\nSuspect it with shakiness, sweating, confusion or aggression in anyone using glucose-lowering medicine.\nIf conscious and able to swallow, give 15 grams of fast sugar such as glucose tablets or juice.\nThen re-check in 15 minutes.\nIf unconscious, seizing, or unable to swallow, give nothing by mouth.\nPlace in the recovery position.\nGet the crew medical officer at once.\nFollow any sugar with a longer-acting snack once recovered.\nLog the episode.",
+      "simple": "Suspect low blood sugar with shakiness.\nSuspect it with sweating.\nSuspect it with confusion.\nSuspect it with aggression.\nThis is in anyone using glucose-lowering medicine.\nIf the person is awake and can swallow, give 15 grams of fast sugar.\nGlucose tablets or juice can be used.\nThen re-check in 15 minutes.\nIf the person is not awake, is seizing, or cannot swallow, give nothing by mouth.\nPlace the person in the recovery position.\nGet the crew medical officer at once.\nOnce recovered, give a longer-acting snack after the sugar.\nLog the episode.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "0c86c1ce5ced52655872b862c86c83211534c5a7c9db3ed42b8d44a547d49edd:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Check the scene is safe. Tap the shoulders and shout: are you okay? Call for the crew medical officer. Put the emergency call out on the loop. Open the airway with head tilt, chin lift. Check for breathing for no more than 10 seconds. If breathing, place in the recovery position. Then monitor. If not breathing, start CPR immediately.",
+      "simple": "See that the scene is safe. Tap the shoulders and shout: are you okay? Call for the crew medical officer. Put the emergency call out on the loop. Tilt the head and lift the chin to open the airway. Check for breathing for no more than 10 seconds. If breathing, use the recovery position. Then monitor. If not breathing, start CPR immediately.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "rejected"
+    },
+    "21cbc37131c2287283ebce91aff0db698b0d4e82f05fbe3a0913e68aee0fb6b3:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Microgravity shifts fluid toward the head.\nIt unloads bone and muscle.\nIt changes heart, pressure and temperature regulation.\nDaily resistive and aerobic countermeasures slow the loss.\nThe app tracks body mass, pressure and temperature trends against the personal baseline.\nDizziness on return to gravity is expected.\nMove slowly.\nSit before standing.",
+      "simple": "Fluid shifts toward the head in microgravity.\nBone and muscle are unloaded.\nHeart, pressure and temperature regulation changes.\nDaily resistive and aerobic countermeasures slow the loss.\nThe app tracks body mass, pressure and temperature trends against the personal baseline.\nDizziness on return to gravity is expected.\nMove slowly.\nSit before standing.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "4dec9bc93c6803071abf286651fd7990c9b8ee9886f81d7621181367d878730c:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "On a Mars transit a message takes 4 to 22 minutes each way.\nNo reply comes sooner than about 8 to 44 minutes.\nBlackouts add on top.\nThe crew must assess, decide and act alone.\nThis app's offline scoring and cited next steps exist for exactly that gap.\nQueue every report and measurement for delivery.\nThe app sends them when the link returns.",
+      "simple": "You send a message. It takes 4 to 22 minutes to arrive.\nA reply takes about 8 to 44 minutes to come back.\nBlackouts make the wait longer.\nYou must assess, decide and act alone.\nThis app gives offline scoring and cited next steps for that gap.\nPut every report and measurement in the queue.\nThe app sends them when the link returns.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "rejected"
+    },
+    "7e5efc690c13140b228322dbf2dd95d7d85326e9eac5c3a9dc0a991f111875d4:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "The environment is hostile and closed.\nThe cabin is a closed loop.\nAir, water and microbes are recycled.\nTrace contaminants, dust and noise accumulate.\nLife-support alarms outrank every app reading.\nOn any atmosphere alarm, follow the emergency procedures.\nDo not follow this screen.\nReport headaches, irritation or breathing changes promptly.\nThis lets patterns show in the history.",
+      "simple": "The environment is hostile and closed.\nThe cabin is a closed loop.\nAir, water and microbes get reused.\nTrace contaminants, dust and noise build up.\nLife-support alarms matter more than any app reading.\nOn any atmosphere alarm, follow the emergency procedures.\nDo not use this screen.\nReport headaches, irritation or breathing changes promptly.\nThis lets patterns show in the history.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "0d7cdd755e2f69fd107db58ca38e2c1464ab92c613cb93d7497806a6967130be:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Small crews in closed habitats face monotony.\nThey face sleep disruption.\nThey face strain on mood and team dynamics.\nCountermeasures are scheduled sleep.\nCountermeasures are a stable day-night routine.\nCountermeasures are private psychological support.\nCountermeasures are protected crew time together.\nLog sleep and mood honestly.\nThe data only helps if it is true.",
+      "simple": "Closed living can feel monotonous.\nSleep can be disrupted.\nMood and teamwork can be strained.\nScheduled sleep helps.\nA stable day-night routine helps.\nPrivate psychological support helps.\nProtected crew time together helps.\nRecord sleep and mood honestly.\nTrue records help.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "763ee4b829d0397ceb6dc880f58fab1b92b29184662f6aa5393b9f85d69d526b:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Beyond low Earth orbit crews face galactic cosmic rays and solar particle events. There is no practical shielding on the body. Cumulative exposure is tracked for each astronaut against the career limit. Solar storms trigger shelter procedures. Report unusual dosimeter readings to mission control. Log shelter time.",
+      "simple": "Beyond low Earth orbit there are galactic cosmic rays and solar particle events. The body has no practical shielding. Each astronaut has cumulative exposure tracked against the career limit. Solar storms trigger shelter procedures. Report unusual dosimeter readings to mission control. Log shelter time.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "5cc19c0a1596a51f18cc7978a0d2c072e86e2c5ac6e8b6cac683eb09fcbad77a:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Log minutes of planned exercise. Include the resistive and aerobic sessions in the mission countermeasures plan. There is no published limit. Consistency against the personal baseline is what matters. Log skipped countermeasure sessions honestly. The flight surgeon sees the true picture.",
+      "simple": "Write down minutes of planned exercise. Include resistive sessions and aerobic sessions. They are in the mission countermeasures plan. There is no published limit. Staying consistent with the personal baseline is what matters. Write down skipped sessions honestly. The flight surgeon sees the true picture.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "27040450b77f15a18cadbb610ee81111c79230690b96a7479d446b3e583c8443:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Weigh under the same conditions each time. Keep the same time of day. Wear similar clothing. Use the toilet before weighing. In microgravity use the body-mass measurement device. Do not use a scale. There is no published single-reading limit. The trend against the personal baseline is what matters. Rapid unexplained loss goes to the crew medical officer.",
+      "simple": "Weigh the same way each time. Use the same time of day. Wear similar clothing. Use the toilet before weighing. In microgravity use the body-mass measurement device. Do not use a scale. A single reading has no published limit. What matters is the trend against the personal baseline. Rapid unexplained loss goes to the crew medical officer.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "22ea0a93a1d7e90d53e3e01e7e1dbadf380039706572b30ca705424dd0234c37:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Log meals against the mission meal plan. The galley system can fill this in. There is no published limit. The trend against the personal baseline is what matters. Sustained undereating with weight loss goes to the crew medical officer.",
+      "simple": "Track meals against the mission meal plan. The galley system can fill this in. There is no published limit. What matters is the trend against the personal baseline. Sustained undereating with weight loss goes to the crew medical officer.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "85a2aa48d98ce095e0d3d847f4a52b1759af1ff67162f1406c510f741a9aeece:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Diastolic blood pressure is measured with systolic as one pair.\nMeasure at rest with the arm supported at heart level.\n90 mmHg or above scores watch.\n120 or above scores critical.\nTell the crew medical officer about any watch or critical result.",
+      "simple": "Measure it with systolic as one pair.\nDo it at rest with the arm supported at heart level.\n90 mmHg or above is a watch score.\n120 or above is a critical score.\nTell the crew medical officer about a watch or critical score.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "ead5ecf6091fdeb2318000854c3b3e4518fc8a0a7529b65571b685aea45a31e9:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Follow the meter's instructions exactly. Use clean dry hands. Use an adequate blood drop. Use a current test strip. Do the control check the maker requires. Below 70 mg/dL scores watch. Below 54 scores critical. 200 or above scores watch. 250 or above scores critical. Low blood sugar with confusion, shaking or sweating needs fast sugar and the crew medical officer at once.",
+      "simple": "Use the meter exactly as told. Hands must be clean and dry. You need enough blood for the drop. The strip must be current. Do the maker's control check. Under 70 mg/dL scores watch. Under 54 scores critical. 200 or above scores watch. 250 or above scores critical. Low blood sugar with confusion, shaking or sweating needs fast sugar and the crew medical officer at once.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "3134e26d2e6580d49a63492f6bd056c44e4a2c59c3386d848eaf6707d2a87cf1:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Sit and rest for five minutes.\nCount the pulse at the wrist for 30 seconds.\nDouble it.\nOr use a validated monitor.\nResting rate for adults is roughly 60 to 100 beats per minute.\nA rate of 111 to 130 scores watch.\nA rate of 131 or above scores critical.\nA rate of 40 or below scores critical.\nTell the crew medical officer about any watch or critical result.",
+      "simple": "Sit and rest for five minutes.\nCount beats at the wrist for 30 seconds.\nDouble the count.\nOr use a validated monitor.\nAdult resting rate is roughly 60 to 100 beats per minute.\n111 to 130 scores watch.\n131 or above scores critical.\n40 or below scores critical.\nTell the crew medical officer about any watch or critical result.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "27c65752d981d9da069661a7ab8c45b33d4920640cfb321f6e4814f07d41fab0:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Test the first urine of the day. Use a fresh dip strip. Read the colour at exactly the maker's time. Darker colour means more concentrated urine. Above 1.020 scores watch. Drink to the mission fluid plan. Re-check. Persistent dark urine with little output needs the crew medical officer.",
+      "simple": "Test the first urine of the day. Use a fresh dip strip. Read the colour at exactly the maker's time. Darker means more concentrated urine. Above 1.020 scores watch. Drink to the mission fluid plan. Test again. Dark urine that stays dark with little output needs the crew medical officer.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "b0c4d73908feccb43a6cf204a4a894f0be4f7b3428b04d46da2d5af6bc71af70:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Score the day from 0 to 100. Score promptly, before sleep. Use the same personal scale each time. There is no published limit. The value only moves the personal baseline. A low run of scores goes to the crew medical officer and trusted crewmates at once. Any thought of harming yourself or others goes to the crew medical officer and trusted crewmates at once.",
+      "simple": "Give the day a score. Use 0 to 100. Do it promptly, before sleep. Use the same personal scale each time. There is no published limit. The value only moves the personal baseline. A low run of scores goes to the crew medical officer and trusted crewmates at once. Any thought of harming yourself or others goes to them at once.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "441782c4a06476531313c7e5d2172e49d2176491121646aade002397dc05f634:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "The app adds each day's dosimeter reading to a running total. It shows the total as a share of the career limit. A single reading does not give an alarm. The number is for planning. High-rate alarms come from the spacecraft radiation monitor. They do not come from this app. On such an alarm, follow the mission shelter plan.",
+      "simple": "The app keeps a running total. It adds each day's dosimeter reading to the total. It shows the total as a share of the career limit. This app does not give alarms. High-rate alarms come from the spacecraft radiation monitor. On such an alarm, follow the mission shelter plan.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "4033a48916e2b404c525c0ecf43dfbf0c2c791f2855a36e5263b4345d15345e7:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Reaction time test.\nRun the test rested.\nUse a quiet moment.\nUse the same hand and device.\nTake the median of the taps.\nIgnore the first practice tap.\nThere is no published limit.\nA clear slowdown against the personal baseline goes to the crew medical officer.\nSleepiness that will not lift goes to the crew medical officer.\nDo this before safety-critical tasks.",
+      "simple": "This is about reaction time.\nBe rested.\nPick a quiet moment.\nUse the same hand.\nUse the same device.\nUse the taps for the median.\nSkip the first practice tap.\nThere is no published limit.\nIf there is a clear slowdown from the personal baseline, go to the crew medical officer.\nIf sleepiness will not lift, go to the crew medical officer.\nDo this before safety-critical tasks.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "rejected"
+    },
+    "2ff4fcb55bd807d11feb98fd76d9de8578115fff9fc6c20030118290766965ad:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Count breaths for 30 seconds while the person rests and is not speaking. Then double the count. Do not tell them you are counting. Telling them changes the rate. 21 to 24 breaths per minute scores watch. 25 or above, or 8 or below, scores critical. Tell the crew medical officer about those results.",
+      "simple": "Count breaths for 30 seconds. The person rests. The person is not speaking. Do not tell them you are counting. Telling them changes the rate. Double the count. 21 to 24 breaths per minute scores watch. 25 or above, or 8 or below, scores critical. Tell the crew medical officer about those results.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "9e6178aaf3420a455b472e79e4640ac2d77167074bb94bcffb3a38c028a38531:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Sleep quality score is scored on waking.\nIt scores last night.\nIt is from 0 to 100.\nIt counts awakenings.\nIt counts how rested you feel.\nThere is no published limit.\nThe value only moves the personal baseline.\nRepeated poor quality with daytime sleepiness goes to the crew medical officer.",
+      "simple": "This score is for last night.\nIt is made on waking.\nIt is from 0 to 100.\nIt counts awakenings.\nIt counts how rested you feel.\nThere is no published limit.\nThe value only moves the personal baseline.\nRepeated poor quality with daytime sleepiness goes to the crew medical officer.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "a06bce1f7f9e117fb99df2af82f403869aaa6209e0eb245c0b842a2dc32fa166:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Log lights-out and wake time each day. The app counts the hours between them. Naps count toward the total if the mission schedule allows them. Under 7 hours scores watch. Repeated short nights need the crew medical officer. This is most important before demanding tasks.",
+      "simple": "Write down lights-out time each day. Write down wake time each day. The app counts the hours between. Naps count if the mission schedule allows them. Under 7 hours scores watch. Repeated short nights need the crew medical officer. This is most important before demanding tasks.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "81fcc94879d8373ac18510a891cd1c7abc6b737723eaab070cc27a6164b99f77:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Warm the hand. Remove nail polish. Keep the finger still in the probe. Wait until the reading is steady. Record the steady value. Do not record a flickering one. 92 to 93 percent scores watch. 91 or below scores critical. A low reading with symptoms is urgent. Tell the crew medical officer at once.",
+      "simple": "Warm the hand. Take off nail polish. Keep the finger still in the probe. Wait for a steady reading. Write down the steady value. Do not write down a flickering one. 92 to 93 percent scores watch. 91 or below scores critical. A low reading with symptoms is urgent. Tell the crew medical officer at once.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "89f2fa3296124a91361acff4d746022480b60203a9204046275500cf10cfc932:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Score perceived stress from 0 to 100. Score at the same time each day. There is no published limit. The value only moves the personal baseline. Sustained high stress goes to the crew medical officer. Stress that stops sleep or work goes to the crew medical officer.",
+      "simple": "Pick a number from 0 to 100 for stress. Do it at the same time each day. There is no published limit. The number only moves the personal baseline. Tell the crew medical officer about sustained high stress. Tell the crew medical officer about stress that stops sleep or work.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "29321b58a671a784927024d759423b9f1cb027ec905281667ab8a81f5f263e5a:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Sit with back supported. Keep feet flat. Keep arm at heart level. Use the correct cuff size. Take the reading at rest. Record systolic together with diastolic as one pair. 140 mmHg or above scores watch. 180 or above scores critical. 90 or below scores critical. 91 to 100 also scores watch. Tell the crew medical officer about any result that scores watch or scores critical.",
+      "simple": "Sit with your back supported. Keep feet flat. Keep arm at heart level. Use the correct cuff size. Take the reading at rest. Record systolic together with diastolic as one pair. 140 mmHg or above scores watch. 180 or above scores critical. 90 or below scores critical. 91 to 100 also scores watch. Tell the crew medical officer about any result that scores watch or scores critical.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "37ea87a3b6e7328a581d09b50d60748083ae2684d728b06f2db67023ceaeca57:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Measure core body temperature at rest. Use the same calibrated device and method each time. In flight the body runs about 1 °C higher than on Earth. The app shifts the personal baseline but never the limit. 39.1 °C or above scores watch. 35.0 °C or below scores critical. Tell the crew medical officer about any amber or red result.",
+      "simple": "Take the temperature at rest. Always use the same calibrated device and method. The body runs about 1 °C higher in flight than on Earth. The app shifts the personal baseline. The app never shifts the limit. 39.1 °C or above scores watch. 35.0 °C or below scores critical. Tell the crew medical officer about any amber or red result.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "rejected"
+    },
+    "1aa47779bf412a4aeec67587d22b592fdeb29eb9e616cd3611e04d179c0d77ac:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Log litres drunk through the day against the mission fluid plan. There is no published limit. The trend against the personal baseline is what matters. Low intake with dark urine or dizziness goes to the crew medical officer.",
+      "simple": "Log litres drunk through the day. Compare against the mission fluid plan. There is no published limit. The trend against the personal baseline matters. Low intake with dark urine or dizziness goes to the crew medical officer.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    },
+    "d892c22eb90613dd6162f2faf3f5c97727d37f975c8cabf6c6046cc2f0a4920b:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
+      "standard": "Record Heart rate variability (RMSSD) at rest. Use the same time of day. Use the same device. Day-to-day changes matter more than any single value. There is no published single-reading limit. A sustained fall against the personal baseline is worth mentioning to the crew medical officer at the next check-in.",
+      "simple": "This entry is Heart rate variability (RMSSD). Record at rest. Record at the same time of day. Use the same device. Changes day to day matter more than one single value. There is no published single-reading limit. A sustained fall against the personal baseline is worth mentioning to the crew medical officer at the next check-in.",
+      "model": "muse-spark-1.3-contributor",
+      "status": "reviewed"
+    }
+  }
+}
