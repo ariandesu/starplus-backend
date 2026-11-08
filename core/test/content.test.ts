@@ -63,6 +63,30 @@ describe("content citations", () => {
     expect(await hashText(["a", "b"])).toBe(sha256(["a", "b"]));
   });
 
+  it("ships an in-flight variant for CPR, unresponsive, fainting and anaphylaxis", async () => {
+    const kb = join(contentDir, "kb");
+    const variants: Record<string, string[]> = {
+      "firstaid-cpr": ["restrain", "evetts-russomano", "handstand"],
+      "firstaid-unresponsive": ["restrain", "no recovery position"],
+      "firstaid-fainting": ["restrain", "do not raise the legs"],
+      "firstaid-anaphylaxis": ["restrain", "cannot drift"],
+    };
+    for (const [file, markers] of Object.entries(variants)) {
+      const raw = JSON.parse(readFileSync(join(kb, `${file}.json`), "utf8"));
+      const checked = await validateKbEntry(raw);
+      expect(checked.ok, file).toBe(true);
+      const joined = (raw.inflight?.text ?? []).join(" ").toLowerCase();
+      for (const marker of markers) {
+        expect(joined, `${file} mentions ${marker}`).toContain(marker);
+      }
+      const publishers = (raw.inflight?.citations ?? []).map((citation: { publisher: string }) => citation.publisher).join(" ");
+      expect(publishers, `${file} cites the microgravity guideline`).toContain("BioMed Central");
+    }
+    const cpr = JSON.parse(readFileSync(join(kb, "firstaid-cpr.json"), "utf8"));
+    const cprPublishers = cpr.inflight.citations.map((citation: { publisher: string }) => citation.publisher).join(" ");
+    expect(cprPublishers).toContain("Aerospace Medical Association");
+  });
+
   it("rejects medication-dose patterns without a quoted source", () => {
     expect(findDosePatterns(["take 2 tablets twice daily"])).toHaveLength(1);
     expect(findDosePatterns(["give 200 mg now"])).toHaveLength(1);

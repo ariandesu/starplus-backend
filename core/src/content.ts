@@ -14,6 +14,11 @@ export interface KbEntry {
   citations: KbCitation[];
   design_note?: string;
   quoted_source?: string;
+  inflight?: {
+    text: string[];
+    citations: KbCitation[];
+    note?: string;
+  };
   content_hash: string;
 }
 
@@ -80,7 +85,26 @@ export async function validateKbEntry(
   if (entry.quoted_source !== undefined && typeof entry.quoted_source !== "string") {
     return { ok: false, reason: "quoted_source must be a string" };
   }
-  const expected = await hashText(entry.text as string[]);
+  if (entry.inflight !== undefined) {
+    const variant = entry.inflight as Record<string, unknown>;
+    if (!Array.isArray(variant.text) || variant.text.length === 0 || (variant.text as unknown[]).some((line) => typeof line !== "string" || (line as string).length === 0)) {
+      return { ok: false, reason: "inflight.text must be a non-empty string array" };
+    }
+    if (!Array.isArray(variant.citations) || variant.citations.length === 0) {
+      return { ok: false, reason: "inflight needs at least one citation" };
+    }
+    for (const citation of variant.citations as Array<Record<string, unknown>>) {
+      for (const key of ["title", "publisher", "year", "url"] as const) {
+        if (typeof citation?.[key] !== "string" || (citation[key] as string).length === 0) {
+          return { ok: false, reason: `inflight citation needs ${key}` };
+        }
+      }
+    }
+    if (variant.note !== undefined && typeof variant.note !== "string") {
+      return { ok: false, reason: "inflight note must be a string" };
+    }
+  }
+  const expected = await hashText([...(entry.text as string[]), ...((entry.inflight as { text?: string[] } | undefined)?.text ?? [])]);
   if (entry.content_hash !== expected) {
     return { ok: false, reason: `content_hash mismatch for '${entry.id}'` };
   }

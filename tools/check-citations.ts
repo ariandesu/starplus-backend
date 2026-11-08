@@ -1,16 +1,15 @@
-import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CATALOG } from "../core/src/catalog.ts";
-import { FORMULARY_NO_DOSE, findDosePatterns, validateFormularyEntry, validateKbEntry } from "../core/src/content.ts";
+import { FORMULARY_NO_DOSE, findDosePatterns, hashText, validateFormularyEntry, validateKbEntry } from "../core/src/content.ts";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const contentDir = join(root, "..", "core", "content");
 const fix = process.argv.includes("--fix");
 
-function sha256(lines: string[]): string {
-  return createHash("sha256").update(lines.join("\n")).digest("hex");
+async function sha256(lines: string[]): Promise<string> {
+  return hashText(lines);
 }
 
 async function main(): Promise<void> {
@@ -35,7 +34,7 @@ async function main(): Promise<void> {
     const path = join(kbDir, file);
     const raw = JSON.parse(readFileSync(path, "utf8"));
     if (fix && Array.isArray(raw.text)) {
-      raw.content_hash = sha256(raw.text);
+      raw.content_hash = await sha256([...raw.text, ...((raw.inflight as { text?: string[] } | undefined)?.text ?? [])]);
       writeFileSync(path, `${JSON.stringify(raw)}\n`);
     }
     const checked = await validateKbEntry(raw);
