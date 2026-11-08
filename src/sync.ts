@@ -14,6 +14,7 @@ type RejectReason =
   | "out_of_bounds"
   | "bp_pair_invalid"
   | "missing_provenance"
+  | "provenance_mismatch"
   | "wrong_crew"
   | "future_timestamp"
   | "catalog_version_too_old"
@@ -77,7 +78,13 @@ function secondsUntilNextUtcDay(now: number): number {
   return Math.max(1, Math.floor((next.getTime() - now) / 1000));
 }
 
-function checkMeasurement(raw: unknown, crew_id: string, now: number, serverVersion: number): BatchItem {
+function checkMeasurement(
+  raw: unknown,
+  crew_id: string,
+  now: number,
+  serverVersion: number,
+  allowedProvenance: string[] | null
+): BatchItem {
   if (typeof raw !== "object" || raw === null) {
     return { client_id: "unknown", reject: "invalid_schema" };
   }
@@ -96,6 +103,9 @@ function checkMeasurement(raw: unknown, crew_id: string, now: number, serverVers
   if (Number.isNaN(measured)) return fail("invalid_schema");
   if (measured > now + 86_400_000) return fail("future_timestamp");
   if (!PROVENANCES.includes(item.provenance as string)) return fail("missing_provenance");
+  if (allowedProvenance !== null && !allowedProvenance.includes(item.provenance as string)) {
+    return fail("provenance_mismatch");
+  }
   if (!SETTINGS.includes(item.setting as string)) return fail("invalid_schema");
   if (!PHASES.includes(item.phase as string)) return fail("invalid_schema");
   if (!SOURCES.includes(item.source as string)) return fail("invalid_schema");
@@ -219,13 +229,19 @@ export async function handleBatch(request: Request, env: Env, requestId: string)
   const itemVersion = Number.parseInt(catalog_version, 10);
   const catalogTooOld = Number.isInteger(itemVersion) && serverVersion - itemVersion > 1;
 
+  const crewRow = await env.DB.prepare("SELECT provenance FROM crew WHERE id = ?")
+    .bind(session.crew_id)
+    .first<{ provenance: string }>();
+  const allowedProvenance =
+    crewRow === null ? null : crewRow.provenance === "real" ? ["real", "simulated_device"] : ["synthetic", "simulated_device"];
+
   const checked = (items as unknown[]).map((raw) =>
     catalogTooOld
       ? {
           client_id: typeof (raw as Record<string, unknown>)?.client_id === "string" ? (raw as Record<string, unknown>).client_id as string : "unknown",
           reject: "catalog_version_too_old" as RejectReason,
         }
-      : checkMeasurement(raw, session.crew_id, now, serverVersion)
+      : checkMeasurement(raw, session.crew_id, now, serverVersion, allowedProvenance)
   );
   const checkedResults = (results as unknown[]).map((raw) => checkResult(raw, session.crew_id));
 

@@ -28,8 +28,9 @@ describe("admin and auth", () => {
 
     const authed = await post("/api/auth", { code, device_id: "device-1" });
     expect(authed.status).toBe(200);
-    const session = (await authed.json()) as { token: string; crew_id: string; role: string };
+    const session = (await authed.json()) as { token: string; crew_id: string; role: string; provenance: string };
     expect(session.crew_id).toBe("auth-crew");
+    expect(session.provenance).toBe("real");
 
     const replay = await post("/api/auth", { code, device_id: "device-1" });
     expect(replay.status).toBe(401);

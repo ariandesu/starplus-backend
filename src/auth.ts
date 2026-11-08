@@ -125,9 +125,9 @@ export async function handleAuth(request: Request, env: Env, requestId: string):
   if (!row || row.revoked !== 0 || row.used_at !== null) {
     return error(401, "Unauthorized", request, requestId);
   }
-  const crew = await env.DB.prepare("SELECT id, role FROM crew WHERE id = ?")
+  const crew = await env.DB.prepare("SELECT id, role, provenance FROM crew WHERE id = ?")
     .bind(row.crew_id)
-    .first<{ id: string; role: string }>();
+    .first<{ id: string; role: string; provenance: string }>();
   if (!crew) return error(401, "Unauthorized", request, requestId);
   const token = randomToken();
   const now = new Date();
@@ -139,5 +139,5 @@ export async function handleAuth(request: Request, env: Env, requestId: string):
       "INSERT INTO sessions (token_hash, crew_id, role, device_id, created_at, expires_at, revoked) VALUES (?, ?, ?, ?, ?, ?, 0)"
     ).bind(await sha256Hex(token), crew.id, crew.role, device_id, now.toISOString(), expires_at),
   ]);
-  return json({ token, crew_id: crew.id, role: crew.role, expires_at }, request, requestId);
+  return json({ token, crew_id: crew.id, role: crew.role, expires_at, provenance: crew.provenance }, request, requestId);
 }

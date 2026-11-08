@@ -66,7 +66,7 @@ describe("content citations", () => {
   it("ships an in-flight variant for CPR, unresponsive, fainting and anaphylaxis", async () => {
     const kb = join(contentDir, "kb");
     const variants: Record<string, string[]> = {
-      "firstaid-cpr": ["restrain", "evetts-russomano", "handstand"],
+      "firstaid-cpr": ["restrain", "evetts-russomano", "handstand", "100 to 120"],
       "firstaid-unresponsive": ["restrain", "no recovery position"],
       "firstaid-fainting": ["restrain", "do not raise the legs"],
       "firstaid-anaphylaxis": ["restrain", "cannot drift"],

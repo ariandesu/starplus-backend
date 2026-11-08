@@ -125,6 +125,41 @@ describe("batch sync", () => {
     expect(body.rejected[0].reason).toBe("bp_pair_invalid");
   });
 
+  it("rejects provenance that does not match the crew member", async () => {
+    await SELF.fetch("https://example.com/api/admin/crew", {
+      method: "POST",
+      headers: adminHeaders(),
+      body: JSON.stringify({ id: "synth-crew", name: "Synth", role: "astronaut", provenance: "synthetic" }),
+    });
+    const issued = await SELF.fetch("https://example.com/api/admin/codes", {
+      method: "POST",
+      headers: { ...adminHeaders(), "CF-Connecting-IP": "10.1.0.4" },
+      body: JSON.stringify({ crew_id: "synth-crew" }),
+    });
+    const { code } = (await issued.json()) as { code: string };
+    const authed = await SELF.fetch("https://example.com/api/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.1.0.4" },
+      body: JSON.stringify({ code, device_id: "device-s" }),
+    });
+    const synthToken = ((await authed.json()) as { token: string }).token;
+    const send = (items: unknown[]) =>
+      SELF.fetch("https://example.com/api/measurements/batch", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${synthToken}`, "Content-Type": "application/json", "CF-Connecting-IP": "10.1.0.4" },
+        body: JSON.stringify({ schema_version: 1, catalog_version: "1", items, results: [] }),
+      });
+    const mixed = await send([
+      measurement({ crew_id: "synth-crew", provenance: "real" }),
+      measurement({ crew_id: "synth-crew", provenance: "synthetic" }),
+    ]);
+    expect(mixed.status).toBe(200);
+    const body = (await mixed.json()) as { accepted: string[]; rejected: Array<{ client_id: string; reason: string }> };
+    expect(body.accepted).toHaveLength(1);
+    expect(body.rejected).toHaveLength(1);
+    expect(body.rejected[0].reason).toBe("provenance_mismatch");
+  });
+
   it("delivers synced rows to a second device", async () => {
     const inserted = await batch([measurement(), measurement({ value_num: 74 })]);
     expect(inserted.status).toBe(200);
