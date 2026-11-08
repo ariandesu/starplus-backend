@@ -5,6 +5,7 @@ import {
   handleAuth,
 } from "./auth";
 import { handleCrewResults } from "./crew";
+import { handleCrewProgress } from "./progress";
 import type { Env } from "./env";
 import { checkAuth, error, json, preflight, readJsonObject, requestStore } from "./http";
 import { handleBatch, handleSync } from "./sync";
@@ -106,6 +107,12 @@ async function handle(request: Request, env: Env): Promise<Response> {
     const limited = await checkApiLimit(request, env, requestId);
     if (limited) return limited;
     return handleCrewResults(request, env, requestId, url);
+  }
+  if (path === "/api/crew/progress") {
+    if (method !== "GET") return error(405, "Method not allowed", request, requestId);
+    const limited = await checkApiLimit(request, env, requestId);
+    if (limited) return limited;
+    return handleCrewProgress(request, env, requestId);
   }
 
   // ---- Astronauts ----
