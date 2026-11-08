@@ -199,6 +199,32 @@ do NOT merge until the auditor reruns the CUJ suite and the load test.
   pass. Typecheck, lint, `build:staging` clean. CUJ suite NOT run
   locally (needs staging codes; the auditor reruns it).
 
+## 1h. Explanation review fixes (review-2026-11-08-explanations: T1–T3)
+
+- `core/content/explain-cache.json` committed exactly as generated
+  (27 reviewed, 6 rejected); shipped to the app via `sync-core.sh`.
+- T1: `getExplanation(entryId, level)` (`src/lib/kb.ts`) recomputes the
+  `sha256(id + "\n" + text.join("\n"))` + `:standard+simple:<model>:prompts-v1`
+  key and returns text only when `status === "reviewed"`. "Explain more
+  simply" shows the reviewed simple text with the AI label; anything else
+  shows the source text labelled "From the cited source" with no AI label.
+  Unit tests: reviewed entry returns AI text, rejected entry and edited
+  source fall back (`test/explain-cache.test.ts`).
+- T2: the prompt keeps every qualifier word for word (normal/normally,
+  at least, no sooner than, only if, never, do not, at once); the ban on
+  "normal"/"fine" applies only to describing the reader's own results.
+  `core/explain/filters.ts` gained a must-keep check (word boundaries,
+  case-insensitive, ordered words with gaps allowed; source count or more
+  required) and flags "normal"/"fine" as softening only when the source
+  lacks them. Three must-reject cases added to `tools/eval/cases.json`.
+  `PROMPT_VERSION` unchanged; change logged in `docs/designs/deviations.md`.
+- T3: `pregenerate` logs a rejection, skips that entry, writes the cache
+  after each entry, and exits non-zero if anything was skipped (reviewed
+  entries are still skipped cleanly). Counts: unit 76 frontend
+  (incl. 4 new explain-cache) + 88 backend; filter eval green;
+  typecheck, lint, `build:staging`, offline suite 2 passed Chromium,
+  2 passed WebKit. CUJ suite NOT run locally (needs staging codes).
+
 ## 2. Checks (local, no codes needed)
 
 - Backend: `npm test` 15 files pass; typecheck, lint clean; citation check

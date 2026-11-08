@@ -47,6 +47,24 @@
       "text": "Tell the crew medical officer about any amber or red result.",
       "source": "Tell the crew medical officer about any amber or red result.",
       "expect": "pass"
+    },
+    {
+      "name": "dropped normal breathing",
+      "text": "If there is no breathing, start compressions at once.",
+      "source": "Start compressions at once if there is no normal breathing.",
+      "expect": "reject"
+    },
+    {
+      "name": "dropped normal twice",
+      "text": "Check for breathing for no more than 10 seconds. If not breathing, start CPR.",
+      "source": "Check for normal breathing for no more than 10 seconds. If not breathing normally, start CPR.",
+      "expect": "reject"
+    },
+    {
+      "name": "dropped sooner-than minimum",
+      "text": "A reply takes about 8 to 44 minutes.",
+      "source": "On a Mars transit a message takes 4 to 22 minutes each way, so no reply comes sooner than about 8 to 44 minutes, with blackouts on top.",
+      "expect": "reject"
     }
   ]
 }

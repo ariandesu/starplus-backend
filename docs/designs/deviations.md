@@ -82,3 +82,17 @@ touching HANDOFF section 5 needs approval before merging.
     knowledge-base entries with `core/explain/templates.ts`. A separate
     result-template prompt had no consumer and no cache entry to live in.
 *   **Rule impact:** none (build-time tooling only, no shipped content changes).
+
+## 2026-11-08 — explain-entry prompt keeps safety qualifiers; PROMPT_VERSION unchanged (audited)
+
+*   **Design section:** Phase 3 item 65 (`tools/pregenerate.ts`, `tools/prompts/explain-entry.md`).
+*   **What the review found:** the prompt's ban on words like "normal" made the model drop
+    safety-critical qualifiers ("no normal breathing", "no reply sooner than…").
+*   **What changed:** the prompt now requires keeping every qualifier word for word
+    ("normal", "normally", "at least", "no sooner than", "only if", "never",
+    "do not", "at once"); the ban on "normal"/"fine" applies only to describing
+    the reader's own results. `core/explain/filters.ts` gained a must-keep check
+    (phrases present in the source must appear at least as often in the output)
+    and only flags "normal"/"fine" as softening when the source lacks them.
+    `PROMPT_VERSION` stays `"1"` so the 27 reviewed cache entries keep their keys.
+*   **Rule impact:** none (build-time tooling only; shipped cache unchanged).

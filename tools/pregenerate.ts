@@ -58,6 +58,7 @@ async function main(): Promise<void> {
     ? (JSON.parse(readFileSync(cachePath, "utf8")) as CacheFile)
     : { cache_version: 1, entries: {} };
   mkdirSync(contentDir, { recursive: true });
+  let skipped = 0;
   for (const file of files) {
     const entry = JSON.parse(readFileSync(join(kbDir, file), "utf8")) as {
       id: string;
@@ -72,18 +73,24 @@ async function main(): Promise<void> {
     }
     const source = [...entry.text, ...entry.citations.map((citation) => citation.title)].join("\n");
     const user = `Entry: ${entry.title}\n${entry.text.join("\n")}`;
-    const reply = await complete(explainPrompt, user);
-    const sections = splitSections(reply);
-    if (!sections) throw new Error(`unparseable reply for ${entry.id}`);
-    for (const [level, text] of Object.entries(sections) as Array<[string, string]>) {
-      const problems = filterExplanation(text, source);
-      if (problems.length > 0) throw new Error(`filter rejected ${entry.id} ${level}: ${problems.join("; ")}`);
+    try {
+      const reply = await complete(explainPrompt, user);
+      const sections = splitSections(reply);
+      if (!sections) throw new Error(`unparseable reply for ${entry.id}`);
+      for (const [level, text] of Object.entries(sections) as Array<[string, string]>) {
+        const problems = filterExplanation(text, source);
+        if (problems.length > 0) throw new Error(`filter rejected ${entry.id} ${level}: ${problems.join("; ")}`);
+      }
+      cache.entries[key] = { ...sections, model: MODEL, status: "generated" };
+      console.log(`generated ${entry.id}`);
+    } catch (error) {
+      skipped += 1;
+      console.log(`skipped ${entry.id}: ${error instanceof Error ? error.message : String(error)}`);
     }
-    cache.entries[key] = { ...sections, model: MODEL, status: "generated" };
-    console.log(`generated ${entry.id}`);
+    writeFileSync(cachePath, `${JSON.stringify(cache, null, 2)}\n`);
   }
-  writeFileSync(cachePath, `${JSON.stringify(cache, null, 2)}\n`);
-  console.log(`wrote ${cachePath}`);
+  console.log(`wrote ${cachePath} (${skipped} skipped)`);
+  if (skipped > 0) process.exit(1);
 }
 
 await main();
