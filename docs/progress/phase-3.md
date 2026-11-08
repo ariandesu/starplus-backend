@@ -113,10 +113,10 @@ do NOT merge until the auditor reruns the CUJ suite and the load test.
 ## 1d. Gate rerun fixes (audit-2026-11-08-phase3e: N1 reload on reconnect, N2 login errors)
 
 - N1: `reloadOnOnline: false` in `withSerwistInit` (`next.config.ts`), so
-  coming back online never reloads the page. Outbox flush is unaffected —
-  it is user-initiated (`Send now` on `/reports`), not reload-driven; the
-  CUJ reconnect flow (queue emergency offline, deliver after reconnect)
-  covers it and the auditor reruns it with fresh codes.
+  coming back online never reloads the page. Outbox flush was
+  user-initiated at the time (`Send now` on `/reports`); P1 below makes
+  it automatic as well, and the auditor reruns the CUJ reconnect flow
+  with fresh codes.
 - N2: `login()` (`src/lib/session.ts`) now throws a distinct message per
   case — no response (network/CORS/offline): "Can't reach the server…Your
   code has not been used."; 401: "That code did not work…"; 429: "Too
@@ -125,6 +125,33 @@ do NOT merge until the auditor reruns the CUJ suite and the load test.
   `/settings` shows the API host ("Server: …") so a build pointed at the
   wrong backend is visible. `npm run build:staging` added to
   `package.json` and used in the staging gate commands above.
+
+## 1e. Gate rerun fixes (audit-2026-11-08-phase3f: P1 auto-sync, P2 login save failure)
+
+- P1: new `useOutboxSync` hook (`src/components/outbox-sync.tsx`,
+  mounted once in `AppShell`) backed by `src/lib/outbox-sync.ts`.
+  It calls `flush()` on app open when a session exists, on the `online`
+  event, after every `enqueue*` (via a new `onQueued` listener registry
+  in `outbox.ts`), and right after login (`login/page.tsx` calls
+  `requestOutboxSync()`), plus a timer at `outbox_next_retry_at` while
+  items wait (reads the backoff already stored by `flush()`). A single
+  in-flight lock (`requestOutboxSync`) prevents overlapping sends;
+  `flush()` already no-ops in demo mode so nothing sends there.
+  "Send now" stays as a manual push.
+- P1 tests: `test/outbox-sync.test.ts` covers all triggers (app open
+  with/without session, post-login request, online event, enqueue,
+  backoff timer) plus the single-flight lock and the demo guard; new
+  env-gated e2e `test/e2e/offline-sync.spec.ts` (login, offline, record,
+  reconnect, wait for the outbox to empty without opening Reports;
+  skips without a staging code). CUJ reconnect step no longer taps
+  "Send now" — it waits for the auto-delivered report.
+- P2: `login()` wraps everything after `res.ok` (JSON parse, IDB
+  writes); on failure it throws "Logged in, but this device could not
+  save the session. Ask for a new code if it keeps happening." Unit test
+  with a 200 non-JSON response.
+- Counts (no retries, no fixme): offline suite 2 passed Chromium,
+  2 passed WebKit. Unit: 65 frontend (incl. 9 new sync + 3 new login) and
+  88 backend pass. Typecheck, lint, `build:staging` clean.
 
 ## 2. Checks (local, no codes needed)
 
