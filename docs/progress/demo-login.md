@@ -94,8 +94,8 @@ One-tap demo login with a pre-filled 30-day history (request-2026-11-08-demo-log
 - Backend 127/127, frontend 211/211; typecheck clean; lint 0 errors;
   citations ok; `core/` identical.
 - CI green on both heads:
-  backend https://github.com/ariandesu/starplus-backend/actions/runs/42506297595 ;
-  frontend https://github.com/ariandesu/starplus-frontend/actions/runs/42506300234 .
+  backend https://github.com/ariandesu/starplus-backend/actions/runs/42509588020 ;
+  frontend https://github.com/ariandesu/starplus-frontend/actions/runs/42509590513 .
 - Local `wrangler dev` (DEMO_LOGIN=on) + `POST /api/admin/demo-reset`
   (726 measurements, 30 results, 2 reports, photo, 0 rejected) + frontend
   build against it:
