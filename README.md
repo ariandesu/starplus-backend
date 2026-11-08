@@ -45,7 +45,9 @@ unchanged and still served.
 
 ## Data sources
 
-All data is synthetic (see `docs/disclosure.md`). The catalog, knowledge base,
+All data is synthetic. Prior work, the build timeline, AI tool use and the lack of
+clinical review are stated in `docs/disclosure.md` — read it before citing or
+submitting this project. The catalog, knowledge base,
 formulary and explanations are cited text in `core/content/`; `tools/check-citations.ts`
 fails the build on a missing source. The model trains on
 `ml/data/astronaut_health_SYNTHETIC.csv` (generated, see

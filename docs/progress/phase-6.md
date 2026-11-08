@@ -75,12 +75,42 @@ updated; both repos tagged `freeze-2026-11-12`.
 - The `freeze-2026-11-12` tags are NOT created here: freezing follows audit,
   merge and deploy on the author's go-ahead.
 
+## AA1–AA4 fixes (audit-2026-11-08-phase6, do not merge)
+
+- AA1: `POST /api/attachments` heads the key first — same sender and size →
+  200 idempotent retry, anything else → 409. Allowlist JPEG/PNG/WebP only,
+  with magic-byte checks (`FF D8 FF`, `89 50 4E 47`, `RIFF....WEBP`); bodies
+  over 3 MB rejected before parsing (content-length gate plus the 2 MB
+  decoded cap). GET carries nosniff, `sandbox` CSP and an inline
+  disposition. Route tests (6): validation, JPEG/WebP magic, the exact
+  overwrite probe (B's SVG → 400, B's PNG → 409, A still served, retry →
+  200, changed bytes → 409), and a role test (sender + FMO 200, other
+  astronaut + mission_control 403). Test-pool notes: R2 writes must stay
+  inside a single test, and every fetched body must be consumed, or
+  isolated-storage teardown fails.
+- AA2: `docs/disclosure.md` rewritten with the true timeline (existing
+  repos, work 2026-11-07 → 2026-11-12, event 2026-11-14, model swap
+  2026-11-13) and the true roles (Claude: design, handoff, audits, deploys,
+  explanation review, as an AI; Muse Spark Contributor model: code; its
+  explanations; Meta may train on Contributor input; only public KB text
+  sent). Both READMEs point at it.
+- AA3: the surgeon view's report detail shows photo thumbnails (fetch with
+  bearer → blob → object URL `<img>`, revoked on unmount, never opened in a
+  new tab); 404 renders "Photo expired (90 days)". E2E with an FMO session
+  (thumbnail + expiry) and a backend role test.
+- AA4: `compressImage` always re-encodes through a canvas (JPEG, longest
+  side ≤ 1,600) and `stripApp1Segments` removes encoder-added APP1 markers,
+  so phone GPS metadata never survives. Unit tests (magic + EXIF strip +
+  scaling) and an e2e that queues a crafted EXIF photo and asserts
+  `FF D8 FF`, no `Exif` marker and ≤ 2 MB in the outbox.
+
 ## Counts
 
-- Backend unit 110/110 (incl. 4 attachments); frontend 205/205.
-- Typecheck clean both repos; lint 0 errors (2 pre-existing demo warnings);
-  citation check ok; `build:staging` clean with /check/camera and
-  /check/camera-hr prerendered; `core/` identical.
-- Offline routes 2/2 Chromium + 2/2 WebKit; camera e2e 2/2 both;
-  bluetooth/voice e2e 3/3 both; import e2e 3/3 both. CUJ and offline-form/sync
-  need staging codes (auditor reruns). NOT merged; NOT tagged.
+- Backend unit 112/112 (incl. 6 attachments); frontend 206/206.
+- Typecheck clean both repos; lint 0 errors (2 pre-existing demo warnings +
+  one benign next/image warning for blob: thumbnails); citation check ok;
+  `build:staging` clean; `core/` identical.
+- Offline routes 2/2, camera 2/2, bluetooth/voice 3/3, import 3/3,
+  surgeon-photos 1/1, emergency-photo 1/1 — all on Chromium and WebKit
+  (fresh `build:staging`). CUJ and staging-code suites left for the auditor.
+  NOT merged; NOT tagged.

@@ -4,6 +4,28 @@ import { error, json } from "./http.ts";
 import { requireSession, sessionError } from "./auth.ts";
 
 export const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
+const ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+
+function magicMatches(contentType: string, bytes: Uint8Array): boolean {
+  if (bytes.byteLength < 12) return false;
+  if (contentType === "image/jpeg") {
+    return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  }
+  if (contentType === "image/png") {
+    return bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+  }
+  return (
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  );
+}
 
 const REPORT_COLUMNS = [
   "client_id",
@@ -122,6 +144,10 @@ export async function handlePostAttachment(request: Request, env: Env, requestId
   const session = await requireSession(request, env, ["astronaut", "flight_medical_officer", "mission_control"]);
   if (!session.ok) return sessionError(session, request, requestId);
   if (!env.ATTACHMENTS) return error(503, "Attachments unavailable", request, requestId);
+  const declaredLength = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_UPLOAD_BYTES) {
+    return error(413, "Attachment exceeds 3 MB", request, requestId);
+  }
   let body: unknown;
   try {
     body = await request.json();
@@ -133,7 +159,7 @@ export async function handlePostAttachment(request: Request, env: Env, requestId
   if (typeof item.report_client_id !== "string" || !isUUID(item.report_client_id)) {
     return error(400, "Invalid attachment", request, requestId);
   }
-  if (typeof item.content_type !== "string" || !item.content_type.startsWith("image/")) {
+  if (typeof item.content_type !== "string" || !(ALLOWED_CONTENT_TYPES as readonly string[]).includes(item.content_type)) {
     return error(400, "Invalid attachment", request, requestId);
   }
   if (typeof item.data_base64 !== "string" || item.data_base64.length === 0) {
@@ -146,8 +172,17 @@ export async function handlePostAttachment(request: Request, env: Env, requestId
   } catch {
     return error(400, "Invalid attachment", request, requestId);
   }
+  if (!magicMatches(item.content_type, bytes)) return error(400, "Invalid attachment", request, requestId);
   if (bytes.byteLength > MAX_ATTACHMENT_BYTES) return error(413, "Attachment exceeds 2 MB", request, requestId);
-  await env.ATTACHMENTS.put(`attachments/${item.id}`, bytes, {
+  const key = `attachments/${item.id}`;
+  const existing = await env.ATTACHMENTS.head(key);
+  if (existing) {
+    if (existing.customMetadata?.submitted_by === session.crew_id && existing.size === bytes.byteLength) {
+      return json({ id: item.id, size: bytes.byteLength }, request, requestId, 200);
+    }
+    return error(409, "Attachment already exists", request, requestId);
+  }
+  await env.ATTACHMENTS.put(key, bytes, {
     httpMetadata: { contentType: item.content_type },
     customMetadata: { submitted_by: session.crew_id, report_client_id: item.report_client_id },
   });
@@ -174,6 +209,9 @@ export async function handleGetAttachment(
     headers: {
       "Content-Type": object.httpMetadata?.contentType ?? "application/octet-stream",
       "Cache-Control": "private, max-age=3600",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "sandbox; default-src 'none'",
+      "Content-Disposition": `inline; filename="${id}"`,
     },
   });
 }
