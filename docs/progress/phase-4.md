@@ -52,20 +52,25 @@ Phase 4 is stretch (items 69–72, all frontend). Gate: adapter tests green.
 - 71: `src/app/history/page.tsx` — All / Radiation / Nutrition / Exercise
   filter chips over the charts (`radiation_dose`; `calories` +
   `water_intake`; `physical_activity`).
-- 72: `test/adapters.test.ts` — synthetic CSV excerpt to catalog
-  measures (BP pair shares one `capture_id`), catalog-code headers with
-  per-row crew/timestamp, invalid-cell rejection, FHIR Bundle import with
-  rejections, °F→°C conversion, questionnaire validation, reaction median
-  and record, body-system catalog coverage and grey-state.
+- 72: `test/adapters.test.ts` — synthetic CSV columns as synthetic
+  measurements, wrong_crew and provenance_mismatch rejections,
+  invalid/missing/future timestamps, BP pair capture, FHIR UCUM units
+  with conversion ([degF]→°C, mmol/L→mg/dL) and rejection
+  (K, empty, g/L, out_of_bounds, non-final skip), questionnaire and
+  reaction records (with shared capture id), and body-system catalog
+  coverage and grey-state.
 
 ## 2. Checks
 
-- Backend: 89 tests pass (no backend changes this phase); typecheck clean;
-  lint 0 errors (2 warnings); `build:staging` clean.
-- Frontend: 93 unit tests pass (`test/adapters.test.ts` 13 incl. body-map
-  coverage); typecheck clean; lint 0 errors (2 pre-existing warnings);
-  `next build --webpack` (staging) succeeds.
-- Playwright (local build): offline suite 2 passed on Chromium and WebKit.
+- Backend: 89 tests pass, typecheck clean, lint 0 errors, `core.sha256`
+  unchanged by this phase (no backend core changes); `build:staging` clean.
+- Frontend: 115 unit tests pass (incl. W1 probe table, W2 validateRecord,
+  W3 provenance/crew checks, W6 BP panel + missing timestamp, new
+  import + reaction + questionnaire e2e); typecheck clean; lint 0 errors
+  (2 pre-existing demo warnings); `build:staging` clean.
+- Playwright (local build, staging config): offline suite 2 passed on
+  Chromium + 2 passed WebKit; new `import-offline.spec.ts` 3 passed on
+  both browsers (CSV import with bad row, reaction test, questionnaire).
 - CUJ suite NOT run (needs staging codes; the auditor reruns it).
 
 ## 3. Phase 4 gate — STOPPED at the gate, awaiting audit
