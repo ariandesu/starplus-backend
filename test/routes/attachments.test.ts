@@ -241,4 +241,30 @@ describe("attachments", () => {
     expect(res.status).toBe(404);
     await res.text();
   });
+
+  it("exposes the attachment GET to allowed origins only", async () => {
+    const id = uuid();
+    const put = await upload(tokenA, {
+      id,
+      report_client_id: reportId,
+      content_type: "image/png",
+      data_base64: PNG_1PX,
+    });
+    expect(put.status).toBe(201);
+    await put.text();
+
+    const allowed = await SELF.fetch(`https://example.com/api/attachments/${id}`, {
+      headers: { Authorization: `Bearer ${tokenA}`, Origin: "https://starplus-frontend.vercel.app" },
+    });
+    expect(allowed.status).toBe(200);
+    expect(allowed.headers.get("access-control-allow-origin")).toBe("https://starplus-frontend.vercel.app");
+    await allowed.arrayBuffer();
+
+    const foreign = await SELF.fetch(`https://example.com/api/attachments/${id}`, {
+      headers: { Authorization: `Bearer ${tokenA}`, Origin: "https://evil.example.com" },
+    });
+    expect(foreign.status).toBe(200);
+    expect(foreign.headers.get("access-control-allow-origin")).toBeNull();
+    await foreign.arrayBuffer();
+  });
 });

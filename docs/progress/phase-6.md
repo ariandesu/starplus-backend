@@ -104,13 +104,35 @@ updated; both repos tagged `freeze-2026-11-12`.
   scaling) and an e2e that queues a crafted EXIF photo and asserts
   `FF D8 FF`, no `Exif` marker and ≤ 2 MB in the outbox.
 
+## BB1–BB3 fixes (audit-2026-11-08-phase6b, do not merge)
+
+- BB1: `handleGetAttachment` builds its response on the shared `corsHeaders`
+  helper (allowed origin + `Vary: Origin`), so the surgeon view can load
+  photos cross-origin. Route test: allowed `Origin` gets
+  `access-control-allow-origin`, a foreign one does not. New unmocked e2e
+  `test/e2e/staging-photo.spec.ts`, gated on `STARPLUS_STAGING_CODE_ASTRO` +
+  `STARPLUS_STAGING_CODE_FMO`: the astronaut queues a photo report to
+  staging, the flight surgeon sees a loaded thumbnail (`naturalWidth > 0`).
+  It skips cleanly without codes (1 skipped on both browsers here).
+- BB2: disclosure now says Claude fixed and deployed the original repos on
+  2026-11-07/08 and ran `pregenerate` with the author's key; the NASA line
+  reads "no data row came from NASA … 28 published OSDR values were used
+  only as a plausibility reference"; first commits dated 2026-11-07 with an
+  explicit author-confirmation note. The author must read it before
+  submission.
+- BB3: `GET /api/reports` takes `?order=desc` (default unchanged) and the
+  surgeon view asks for newest-first, so the newest 500 show. Route test
+  seeds 501 reports: default returns the oldest 500 ascending, `desc`
+  returns the newest 500 descending with the newest first.
+
 ## Counts
 
-- Backend unit 112/112 (incl. 6 attachments); frontend 206/206.
+- Backend unit 115/115 (incl. 7 attachments, 4 reports incl. the 501-row
+  order test); frontend 206/206.
 - Typecheck clean both repos; lint 0 errors (2 pre-existing demo warnings +
   one benign next/image warning for blob: thumbnails); citation check ok;
   `build:staging` clean; `core/` identical.
 - Offline routes 2/2, camera 2/2, bluetooth/voice 3/3, import 3/3,
   surgeon-photos 1/1, emergency-photo 1/1 — all on Chromium and WebKit
-  (fresh `build:staging`). CUJ and staging-code suites left for the auditor.
-  NOT merged; NOT tagged.
+  (fresh `build:staging`); staging-photo 1 skipped (no codes). CUJ and
+  staging-code suites left for the auditor. NOT merged; NOT tagged.

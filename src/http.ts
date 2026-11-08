@@ -26,7 +26,7 @@ export function allowedOrigin(request: Request, extraOrigins?: string): string |
   return null;
 }
 
-function corsHeaders(request: Request, requestId: string): Record<string, string> {
+export function corsHeaders(request: Request, requestId: string): Record<string, string> {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",

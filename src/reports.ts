@@ -1,6 +1,6 @@
 import { isUUID } from "@starplus/core";
 import type { Env } from "./env.ts";
-import { error, json } from "./http.ts";
+import { corsHeaders, error, json } from "./http.ts";
 import { requireSession, sessionError } from "./auth.ts";
 
 export const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
@@ -111,11 +111,14 @@ export async function handleGetReports(request: Request, env: Env, requestId: st
   const session = await requireSession(request, env, ["flight_medical_officer", "mission_control"]);
   if (!session.ok) return sessionError(session, request, requestId);
   const since = url.searchParams.get("since");
+  const order = url.searchParams.get("order") === "desc" ? "DESC" : "ASC";
   const { results } = since
-    ? await env.DB.prepare("SELECT * FROM reports WHERE received_at > ? ORDER BY received_at ASC, client_id ASC LIMIT 500")
+    ? await env.DB.prepare(
+        `SELECT * FROM reports WHERE received_at > ? ORDER BY received_at ${order}, client_id ${order} LIMIT 500`
+      )
         .bind(since)
         .all()
-    : await env.DB.prepare("SELECT * FROM reports ORDER BY received_at ASC, client_id ASC LIMIT 500").all();
+    : await env.DB.prepare(`SELECT * FROM reports ORDER BY received_at ${order}, client_id ${order} LIMIT 500`).all();
   return json({ reports: results }, request, requestId);
 }
 
@@ -207,6 +210,7 @@ export async function handleGetAttachment(
   }
   return new Response(object.body, {
     headers: {
+      ...corsHeaders(request, requestId),
       "Content-Type": object.httpMetadata?.contentType ?? "application/octet-stream",
       "Cache-Control": "private, max-age=3600",
       "X-Content-Type-Options": "nosniff",
