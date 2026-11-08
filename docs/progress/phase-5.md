@@ -115,10 +115,19 @@ formulary citation check green.
   "thirty five" = 35.
 - bluetooth-voice.spec.ts 3/3 on Chromium and WebKit.
 
+## Z3 fix (audit-2026-11-08-phase5b round 2, do not merge)
+
+- `/check/voice`: a reading with no metric starts with an empty "Choose a
+  measure" option, never `heart_rate`; Save stays disabled until every row
+  has a measure (`previewReady`); no default metric anywhere. Pure helpers
+  `transcriptToPreview`/`previewReady` in the voice adapter.
+- Tests: transcript "one thirty" gives a row with no measure and Save is
+  disabled; "pulse sixty six" is ready to save.
+
 ## Counts
 
-- Frontend unit 188/188 (incl. 14 gamification, BLE reserved/unit/glucose
-  and 17-phrase voice coverage); backend 106/106 (incl. 14 gamification,
+- Frontend unit 190/190 (incl. 14 gamification, BLE reserved/unit/glucose
+  and 17-phrase voice coverage, Z3 preview gating); backend 106/106 (incl. 14 gamification,
   3 progress route).
 - Typecheck clean both repos; lint 0 errors (2 pre-existing demo
   warnings); citation check ok; `build:staging` clean with /check/bluetooth,

@@ -53,6 +53,28 @@ fix. After it, Phase 5 can merge.
     105/70; "one forty over ninety" → 140/90; "ninety five over sixty" → 95/60; "pulse one
     oh two" → 102; "thirty five" → 35.
 
+### Z1 verified (round 2, `b170e27`)
+
+*   Voice now reads 135/85, 105/70, 140/90, 95/60, 120/80 and 210/110 correctly, and
+    "pulse one oh two" = 102. "Thirty five" = 35, "one hundred thirty five" = 135.
+*   Unit 188/188 ×2; backend 106/106; typecheck clean; lint 0 errors; `core/` identical;
+    CI success on both heads; `bluetooth-voice` 6/6.
+
+### Z3 — Medium (blocks merge) — A number with no measure is saved as heart rate
+
+*   `extractReadings("one thirty")` returns a reading with `metric: null`. The voice page
+    then fills in `reading.metric ?? "heart_rate"`, so the preview shows "heart_rate 130
+    bpm" (a high reading), and one tap saves it.
+*   **Fix:**
+    *   in `/check/voice`, a reading with no metric starts with an empty "Choose a
+        measure" option;
+    *   "Save" stays disabled until every row has a measure;
+    *   no default metric anywhere;
+    *   e2e or unit test: the transcript "one thirty" gives a row with no measure, and
+        Save is disabled.
+*   **Note (no change needed):** "twelve thirty" reads as 42. Times are not measurements;
+    leave it.
+
 ### Z2 — Info
 
 *   Staging codes used this run: 6 synthetic `stg-astro-1` codes.
