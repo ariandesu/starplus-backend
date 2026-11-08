@@ -153,6 +153,29 @@ do NOT merge until the auditor reruns the CUJ suite and the load test.
   2 passed WebKit. Unit: 65 frontend (incl. 9 new sync + 3 new login) and
   88 backend pass. Typecheck, lint, `build:staging` clean.
 
+## 1f. Gate rerun fixes (audit-2026-11-08-phase3g: Q1 backoff gate)
+
+- Q1: `flush()` takes `{ force?: boolean }`. "Send now" and the `online`
+  trigger pass `force: true`, which clears the stored backoff and sends at
+  once. Automatic triggers (`requestOutboxSync()` without force) skip
+  while `navigator.onLine` is false — no failure recorded, no backoff set.
+  Consecutive failures are counted in a stored `outbox_failures` setting:
+  backoff is `computeBackoffMs(count)` (5 s base, doubling, 10 min cap,
+  ±20% jitter) with +1 per failed send and a reset to 0 on any successful
+  send or forced send. A dirty flag runs one more send if anything was
+  queued mid-send (`requestOutboxSync` in-flight lock).
+- Q1 tests: unit tests for forced send (ignores + clears backoff),
+  offline skip (no failure recorded), consecutive doubling (5 s → 10 s)
+  with reset on success, and enqueue-during-send leading to a second
+  send — all with real short timers (fake timers stall fake-indexeddb).
+  `offline-sync.spec.ts` now waits for the batch request within 3 s of
+  reconnecting. The CUJ reconnect step (no Send now tap) is unchanged
+  and covers the live path with fresh codes.
+- Counts (no retries, no fixme): offline suite 2 passed Chromium,
+  2 passed WebKit. Unit: 69 frontend + 88 backend pass. Typecheck, lint,
+  `build:staging` clean. CUJ suite NOT run locally (needs staging codes;
+  the auditor reruns it).
+
 ## 2. Checks (local, no codes needed)
 
 - Backend: `npm test` 15 files pass; typecheck, lint clean; citation check
