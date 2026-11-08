@@ -18,7 +18,8 @@ type RejectReason =
   | "wrong_crew"
   | "future_timestamp"
   | "catalog_version_too_old"
-  | "daily_cap_reached";
+  | "daily_cap_reached"
+  | "client_id_conflict";
 
 interface BatchItem {
   client_id: string;
@@ -313,12 +314,42 @@ export async function handleBatch(request: Request, env: Env, requestId: string)
     accepted: [...insertable, ...insertableResults]
       .filter((item) => inserted.has(item.client_id))
       .map((item) => item.client_id),
-    duplicates: [...insertable, ...insertableResults]
-      .filter((item) => !inserted.has(item.client_id))
-      .map((item) => item.client_id),
+    duplicates: [] as string[],
     rejected,
     max_items: MAX_ITEMS,
   };
+  const attempted = new Map<string, "measurements" | "results">();
+  for (const item of insertable) {
+    if (!inserted.has(item.client_id)) attempted.set(item.client_id, "measurements");
+  }
+  for (const item of insertableResults) {
+    if (!inserted.has(item.client_id)) attempted.set(item.client_id, "results");
+  }
+  if (attempted.size > 0) {
+    const owners = new Map<string, string>();
+    for (const table of ["measurements", "results"] as const) {
+      const ids = [...attempted].filter(([, t]) => t === table).map(([id]) => id);
+      for (let i = 0; i < ids.length; i += 100) {
+        const chunk = ids.slice(i, i + 100);
+        const rows = await env.DB.prepare(
+          `SELECT client_id, crew_id FROM ${table} WHERE client_id IN (${chunk.map(() => "?").join(", ")})`
+        )
+          .bind(...chunk)
+          .all<{ client_id: string; crew_id: string }>();
+        for (const row of rows.results) owners.set(row.client_id, row.crew_id);
+      }
+    }
+    const duplicates: string[] = [];
+    for (const [client_id] of attempted) {
+      const owner = owners.get(client_id);
+      if (owner !== undefined && owner !== session.crew_id) {
+        rejected.push({ client_id, reason: "client_id_conflict" });
+      } else {
+        duplicates.push(client_id);
+      }
+    }
+    response.duplicates = duplicates;
+  }
   if (rejected.some((entry) => entry.reason === "daily_cap_reached")) {
     response.retry_after = secondsUntilNextUtcDay(now);
   }

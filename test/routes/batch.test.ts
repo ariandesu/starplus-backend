@@ -160,6 +160,46 @@ describe("batch sync", () => {
     expect(body.rejected[0].reason).toBe("provenance_mismatch");
   });
 
+  it("rejects a duplicate client_id owned by another crew member", async () => {
+    await SELF.fetch("https://example.com/api/admin/crew", {
+      method: "POST",
+      headers: adminHeaders(),
+      body: JSON.stringify({ id: "batch-crew-2", name: "Batch 2", role: "astronaut", provenance: "real" }),
+    });
+    const issued = await SELF.fetch("https://example.com/api/admin/codes", {
+      method: "POST",
+      headers: { ...adminHeaders(), "CF-Connecting-IP": "10.1.0.5" },
+      body: JSON.stringify({ crew_id: "batch-crew-2" }),
+    });
+    const { code } = (await issued.json()) as { code: string };
+    const authed = await SELF.fetch("https://example.com/api/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.1.0.5" },
+      body: JSON.stringify({ code, device_id: "device-2" }),
+    });
+    const otherToken = ((await authed.json()) as { token: string }).token;
+    const sendAsOther = (items: unknown[]) =>
+      SELF.fetch("https://example.com/api/measurements/batch", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${otherToken}`, "Content-Type": "application/json", "CF-Connecting-IP": "10.1.0.5" },
+        body: JSON.stringify({ schema_version: 1, catalog_version: "1", items, results: [] }),
+      });
+    const shared = measurement({ crew_id: "batch-crew" });
+    const first = await batch([shared]);
+    expect(first.status).toBe(200);
+    const clash = await sendAsOther([measurement({ client_id: shared.client_id, crew_id: "batch-crew-2" })]);
+    expect(clash.status).toBe(200);
+    const body = (await clash.json()) as {
+      accepted: string[];
+      duplicates: string[];
+      rejected: Array<{ client_id: string; reason: string }>;
+    };
+    expect(body.accepted).toHaveLength(0);
+    expect(body.duplicates).toHaveLength(0);
+    expect(body.rejected).toHaveLength(1);
+    expect(body.rejected[0].reason).toBe("client_id_conflict");
+  });
+
   it("delivers synced rows to a second device", async () => {
     const inserted = await batch([measurement(), measurement({ value_num: 74 })]);
     expect(inserted.status).toBe(200);

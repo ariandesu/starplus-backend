@@ -97,7 +97,7 @@ async function main(): Promise<void> {
       const value = Number.parseFloat(cell);
       if (!Number.isFinite(value)) continue;
       items.push({
-        client_id: uuidFrom(`load-import:${row.person_id}:${i}:${column}`),
+        client_id: uuidFrom(`load-import:${args.crew}:${row.person_id}:${i}:${column}`),
         crew_id: args.crew,
         metric: column,
         value_num: value,
