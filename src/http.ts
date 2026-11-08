@@ -1,10 +1,28 @@
+import { AsyncLocalStorage } from "node:async_hooks";
+
 const PRODUCTION_ORIGIN = "https://starplus-frontend.vercel.app";
 const PREVIEW_ORIGIN = /^https:\/\/starplus-frontend-[a-z0-9-]+-mahirs-projects-9649281e\.vercel\.app$/;
 
-export function allowedOrigin(request: Request): string | null {
+/**
+ * Per-request context, set by the worker entrypoint from `env`. Carries the
+ * staging-only `EXTRA_ALLOWED_ORIGINS` allow-list so response helpers with
+ * fixed signatures can still honour it.
+ */
+export const requestStore = new AsyncLocalStorage<{ extraOrigins: string }>();
+
+export function allowedOrigins(extraOrigins = ""): string[] {
+  return extraOrigins
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+}
+
+export function allowedOrigin(request: Request, extraOrigins?: string): string | null {
   const origin = request.headers.get("Origin");
   if (!origin) return null;
   if (origin === PRODUCTION_ORIGIN || PREVIEW_ORIGIN.test(origin)) return origin;
+  const extras = extraOrigins ?? requestStore.getStore()?.extraOrigins ?? "";
+  if (allowedOrigins(extras).includes(origin)) return origin;
   return null;
 }
 

@@ -23,6 +23,12 @@ describe("cors", () => {
     expect(foreign.status).toBe(200);
   });
 
+  it("gives localhost no allow header without the staging variable", async () => {
+    const local = await get("/api/health", "http://localhost:3100");
+    expect(local.status).toBe(200);
+    expect(local.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+
   it("answers preflight", async () => {
     const res = await SELF.fetch("https://example.com/api/sync", {
       method: "OPTIONS",

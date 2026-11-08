@@ -3,6 +3,19 @@
 Proposed entries need the author's approval before they take effect. Anything
 touching HANDOFF section 5 needs approval before merging.
 
+## 2026-11-08 — `POST /api/auth` also returns the crew's provenance (APPROVED 2026-11-08)
+
+*   **Design section:** API contract (`POST /api/auth` response).
+*   **What the design says:** `200 {token, crew_id, role, expires_at}`.
+*   **What is implemented instead:** `200 {token, crew_id, role, expires_at, provenance}`,
+    where `provenance` is the crew member's `crew.provenance`.
+*   **Why:** the G2 provenance-mismatch rule rejects real-provenance records from synthetic
+    crew members, so the device must label new records with its crew's provenance. Nothing
+    else on the device can know it.
+*   **Rule impact:** additive response field only. Old clients ignore it. No safety-limit,
+    model, schema or secrets change.
+*   **Status:** APPROVED by the author 2026-11-08 (Phase 3 G-items).
+
 ## 2026-11-08 — limit entries gain an optional `max` bound (APPROVED 2026-11-08)
 
 *   **Design section:** Fixed implementation decisions ("Catalog limit shape")

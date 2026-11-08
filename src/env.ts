@@ -9,4 +9,6 @@ export interface Env {
   ATTACHMENTS?: R2Bucket;
   /** Bound only by the vitest pool; marks the test path for rate-limit checks. */
   TEST_MIGRATIONS?: unknown[];
+  /** Staging only: extra CORS origins (comma-separated). Never set in production. */
+  EXTRA_ALLOWED_ORIGINS?: string;
 }

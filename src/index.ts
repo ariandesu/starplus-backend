@@ -6,7 +6,7 @@ import {
 } from "./auth";
 import { handleCrewResults } from "./crew";
 import type { Env } from "./env";
-import { checkAuth, error, json, preflight, readJsonObject } from "./http";
+import { checkAuth, error, json, preflight, readJsonObject, requestStore } from "./http";
 import { handleBatch, handleSync } from "./sync";
 import { handleAckReport, handleGetReports, handlePostReport } from "./reports";
 import { checkApiLimit, checkAuthLimit } from "./ratelimit";
@@ -253,13 +253,15 @@ async function recomputeAll(db: D1Database): Promise<number> {
 
 export default {
   async fetch(request, env): Promise<Response> {
-    try {
-      return await handle(request, env);
-    } catch (e) {
-      console.error("Unhandled error", request.method, new URL(request.url).pathname, e);
-      const requestId = crypto.randomUUID();
-      return error(500, "Internal server error", request, requestId);
-    }
+    return requestStore.run({ extraOrigins: env.EXTRA_ALLOWED_ORIGINS ?? "" }, async () => {
+      try {
+        return await handle(request, env);
+      } catch (e) {
+        console.error("Unhandled error", request.method, new URL(request.url).pathname, e);
+        const requestId = crypto.randomUUID();
+        return error(500, "Internal server error", request, requestId);
+      }
+    });
   },
 
   // The 72h window slides even when no new readings arrive, so recompute on a schedule.
