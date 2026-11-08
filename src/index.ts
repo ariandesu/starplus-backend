@@ -7,7 +7,7 @@ import {
 } from "./auth";
 import { handleCrewResults } from "./crew";
 import { handleCrewProgress } from "./progress";
-import { resetDemoData } from "./demo";
+import { resetAndSeedDemo } from "./demo";
 import type { Env } from "./env";
 import { checkAuth, error, json, preflight, readJsonObject, requestStore } from "./http";
 import { handleBatch, handleSync } from "./sync";
@@ -73,8 +73,8 @@ async function handle(request: Request, env: Env): Promise<Response> {
     if (limited) return limited;
     const denied = checkAuth(request, env.API_KEY, requestId);
     if (denied) return denied;
-    const counts = await resetDemoData(env.DB, env.ATTACHMENTS);
-    return json({ reset: counts }, request, requestId);
+    const outcome = await resetAndSeedDemo(env);
+    return json(outcome, request, requestId);
   }
   if (path === "/api/auth") {
     if (method !== "POST") return error(405, "Method not allowed", request, requestId);
@@ -301,12 +301,13 @@ export default {
   },
 
   // The 72h window slides even when no new readings arrive, so recompute on a schedule.
-  // Once a day at 00:00 UTC, reset demo data so judges' test entries don't pile up.
+  // Once a day at 00:00 UTC, reset and re-seed the demo so judges' test entries
+  // don't pile up and the demo never goes empty.
   async scheduled(_controller, env, ctx) {
     ctx.waitUntil(recomputeAll(env.DB).then((n) => console.log(`Recomputed ${n} WATCH signals`)));
     if (new Date().getUTCHours() === 0) {
       ctx.waitUntil(
-        resetDemoData(env.DB, env.ATTACHMENTS).then((counts) => console.log("Demo reset", JSON.stringify(counts)))
+        resetAndSeedDemo(env).then((outcome) => console.log("Demo reset and reseed", JSON.stringify(outcome)))
       );
     }
   },

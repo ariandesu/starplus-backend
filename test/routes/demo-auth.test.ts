@@ -172,7 +172,7 @@ describe("demo login", () => {
     expect(((await fmoResults.json()) as { results: unknown[] }).results.length).toBeGreaterThan(0);
   });
 
-  it("demo reset touches only demo rows", async () => {
+  it("demo reset keeps sessions and crew, reseeds 30 days, spares real rows", async () => {
     const realToken = await loginAs("real-astro");
     const realItem = uuid();
     const seeded = await SELF.fetch("https://example.com/api/measurements/batch", {
@@ -200,19 +200,18 @@ describe("demo login", () => {
       }),
     });
     expect(demoSeeded.status).toBe(200);
-    const demoPhoto = await SELF.fetch("https://example.com/api/attachments", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${demo.token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ id: DEMO_PHOTO_ID, report_client_id: uuid(), content_type: "image/png", data_base64: PNG_1PX }),
-    });
-    expect(demoPhoto.status).toBe(201);
-    await demoPhoto.text();
 
     const reset = await SELF.fetch("https://example.com/api/admin/demo-reset", {
       method: "POST",
       headers: adminHeaders(),
     });
     expect(reset.status).toBe(200);
+    const outcome = (await reset.json()) as {
+      reset: Record<string, number>;
+      seeded: { measurements: number; results: number; reports: number };
+    };
+    expect(outcome.seeded.measurements).toBeGreaterThan(400);
+    expect(outcome.seeded.results).toBe(30);
 
     const after = await SELF.fetch("https://example.com/api/sync", {
       headers: { Authorization: `Bearer ${realToken}` },
@@ -221,16 +220,24 @@ describe("demo login", () => {
     expect(synced.measurements.map((item) => item.client_id)).toContain(realItem);
     expect(synced.measurements.map((item) => item.client_id)).not.toContain(demoItem);
 
-    const relogin = (await (await demoLogin("astronaut")).json()) as { token: string };
-    const reloginFmo = (await (await demoLogin("flight_medical_officer")).json()) as { token: string };
-    const gonePhoto = await SELF.fetch(`https://example.com/api/attachments/${DEMO_PHOTO_ID}`, {
-      headers: { Authorization: `Bearer ${relogin.token}` },
+    const demoAfter = await SELF.fetch("https://example.com/api/sync", {
+      headers: { Authorization: `Bearer ${demo.token}` },
     });
-    expect(gonePhoto.status).toBe(404);
-    await gonePhoto.text();
-    const goneReports = await SELF.fetch("https://example.com/api/reports", {
+    expect(demoAfter.status).toBe(200);
+    const demoSynced = (await demoAfter.json()) as { measurements: Array<{ client_id: string; measured_at: string }> };
+    const demoDays = new Set(demoSynced.measurements.map((item) => item.measured_at.slice(0, 10)));
+    expect(demoDays.size).toBe(30);
+    expect(demoSynced.measurements.map((item) => item.client_id)).not.toContain(demoItem);
+
+    const reloginFmo = (await (await demoLogin("flight_medical_officer")).json()) as { token: string };
+    const demoPhoto = await SELF.fetch(`https://example.com/api/attachments/${DEMO_PHOTO_ID}`, {
       headers: { Authorization: `Bearer ${reloginFmo.token}` },
     });
-    expect(((await goneReports.json()) as { reports: unknown[] }).reports).toHaveLength(0);
+    expect(demoPhoto.status).toBe(200);
+    await demoPhoto.arrayBuffer();
+    const demoReports = await SELF.fetch("https://example.com/api/reports", {
+      headers: { Authorization: `Bearer ${reloginFmo.token}` },
+    });
+    expect(((await demoReports.json()) as { reports: unknown[] }).reports).toHaveLength(2);
   });
 });

@@ -1,32 +1,35 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { buildDemoHistory } from "../tools/seed-demo.ts";
+import { buildDemoSeed } from "../src/demo-seed.ts";
 
-const root = dirname(fileURLToPath(import.meta.url));
-const csv = readFileSync(join(root, "..", "ml", "data", "astronaut_health_SYNTHETIC.csv"), "utf8");
-
-describe("buildDemoHistory", () => {
-  it("yields at least one watch and one critical result with baselines", async () => {
-    const { person, measurements, results } = await buildDemoHistory(csv, "SYN-A001", Date.parse("2026-11-08T12:00:00Z"));
-    expect(person).toBe("SYN-A001");
-    expect(measurements.length).toBeGreaterThan(400);
-    expect(results).toHaveLength(30);
-    const statuses = results.map((result) => result.overall_status);
-    expect(statuses).toContain("watch");
-    expect(statuses).toContain("critical");
-    expect(statuses[statuses.length - 1]).toBe("critical");
-    const withBaselines = results[results.length - 2];
+describe("buildDemoSeed", () => {
+  it("seeds a mostly nominal month with spread watch days and one late critical", async () => {
+    const seed = await buildDemoSeed(Date.parse("2026-11-08T12:00:00Z"));
+    expect(seed.person).toBe("SYN-A001");
+    expect(seed.measurements.length).toBeGreaterThan(400);
+    expect(seed.results).toHaveLength(30);
+    expect(seed.days).toHaveLength(30);
+    const statuses = seed.results.map((result) => result.overall_status);
+    const nominal = statuses.filter((status) => status === "nominal").length;
+    expect(nominal).toBeGreaterThanOrEqual(21);
+    const watchDays = statuses.flatMap((status, i) => (status === "watch" ? [i] : []));
+    expect(watchDays.length).toBeGreaterThanOrEqual(2);
+    expect(watchDays[0]).toBeLessThanOrEqual(14);
+    expect(watchDays).toContain(29);
+    const lateCritical = statuses
+      .map((status, i) => ({ status, i }))
+      .filter(({ status }) => status === "critical");
+    expect(lateCritical).toHaveLength(1);
+    expect(lateCritical[0].i).toBeGreaterThanOrEqual(27);
+    expect(statuses[statuses.length - 1]).toBe("watch");
+    const latest = seed.results[seed.results.length - 1];
     for (const metric of ["heart_rate", "blood_pressure_systolic", "blood_pressure_diastolic"]) {
-      const entry = withBaselines.per_measure.find((item) => item.metric === metric);
+      const entry = latest.per_measure.find((item) => item.metric === metric);
       expect(entry, metric).toBeDefined();
       expect(entry!.values.baseline_mean, metric).not.toBeNull();
       expect(entry!.values.baseline_n, metric).toBeGreaterThanOrEqual(5);
     }
-    expect(withBaselines.per_measure.find((item) => item.metric === "heart_rate")!.status).toBe("watch");
-    const crew = new Set(measurements.map((item) => item.crew_id));
+    const crew = new Set(seed.measurements.map((item) => item.crew_id));
     expect([...crew]).toEqual(["demo-astronaut"]);
-    expect(new Set(measurements.map((item) => item.client_id)).size).toBe(measurements.length);
+    expect(new Set(seed.measurements.map((item) => item.client_id)).size).toBe(seed.measurements.length);
   }, 60_000);
 });
