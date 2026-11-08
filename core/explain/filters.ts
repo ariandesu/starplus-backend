@@ -58,6 +58,13 @@ function containsWord(haystack: string, word: string): boolean {
   return new RegExp(`\\b${escapeRegExp(word)}\\b`, "i").test(haystack);
 }
 
+const MAX_GAP_WORDS = 3;
+const SENTENCE_END = /[.!;]/;
+
+function countWords(text: string): number {
+  return text.split(/\s+/).filter((word) => /[\p{L}\p{N}]/u.test(word)).length;
+}
+
 function countOccurrences(haystack: string, phrase: string): number {
   const words = phrase.split(/\s+/);
   if (words.length === 1) {
@@ -65,24 +72,34 @@ function countOccurrences(haystack: string, phrase: string): number {
     return matches === null ? 0 : matches.length;
   }
   let count = 0;
-  let from = 0;
-  for (;;) {
-    let pos = from;
-    let matched = true;
-    for (const word of words) {
-      const re = new RegExp(`\\b${escapeRegExp(word)}\\b`, "gi");
-      re.lastIndex = pos;
-      const found = re.exec(haystack);
-      if (found === null) {
-        matched = false;
-        break;
+  for (const sentence of haystack.split(SENTENCE_END)) {
+    let from = 0;
+    for (;;) {
+      const firstRe = new RegExp(`\\b${escapeRegExp(words[0])}\\b`, "gi");
+      firstRe.lastIndex = from;
+      const first = firstRe.exec(sentence);
+      if (first === null) break;
+      let pos = first.index + first[0].length;
+      let matched = true;
+      for (let index = 1; index < words.length; index += 1) {
+        const re = new RegExp(`\\b${escapeRegExp(words[index])}\\b`, "gi");
+        re.lastIndex = pos;
+        const found = re.exec(sentence);
+        if (found === null || countWords(sentence.slice(pos, found.index)) > MAX_GAP_WORDS) {
+          matched = false;
+          break;
+        }
+        pos = found.index + found[0].length;
       }
-      pos = found.index + found[0].length;
+      if (matched) {
+        count += 1;
+        from = pos;
+      } else {
+        from = first.index + first[0].length;
+      }
     }
-    if (!matched) return count;
-    count += 1;
-    from = pos;
   }
+  return count;
 }
 
 function extractNumbers(text: string): string[] {

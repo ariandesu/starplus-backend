@@ -284,7 +284,7 @@ Not run (needs author-held secrets and codes):
 - T3: `pregenerate` logs each rejection, skips that entry, writes the
   cache after every entry, and exits non-zero if anything was skipped
   (reviewed entries are still skipped cleanly).
-- Counts (no retries, no fixme): unit 76 frontend + 88 backend pass;
-  filter eval green; typecheck, lint, `build:staging` green; offline
+- Counts (no retries, no fixme): unit 80 frontend (incl. 5 explain-cache + 3 waiting-banner) + 88 backend pass;
+  filter eval green; typecheck, lint (2 pre-existing warnings), `build:staging` green; offline
   suite 2 passed Chromium, 2 passed WebKit. CUJ suite NOT run locally
   (needs staging codes; the auditor reruns it).

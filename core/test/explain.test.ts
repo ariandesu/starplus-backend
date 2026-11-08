@@ -29,6 +29,17 @@ describe("explanation filters", () => {
     expect(filterExplanation("Take it daily.", "Drink water.")).not.toEqual([]);
   });
 
+  it("matches must-keep phrases only close together within one sentence", () => {
+    const source = "There is no reply sooner than expected. Wait for the loop.";
+    expect(filterExplanation("There is no reply sooner than expected, wait more.", source)).toEqual([]);
+    expect(filterExplanation("There is no reply from them at all today, so call sooner than planned.", source)).toEqual([
+      "drops 'no sooner than' from the source entry",
+    ]);
+    expect(filterExplanation("There is no reply. Call back sooner than noon.", source)).toEqual([
+      "drops 'no sooner than' from the source entry",
+    ]);
+  });
+
   it("fills templates and requires every placeholder", () => {
     expect(fillTemplate("Value {{value}} {{unit}}.", { value: 72, unit: "bpm" })).toBe("Value 72 bpm.");
     expect(templateVariables("Value {{value}} {{unit}} and {{value}}.")).toEqual(["value", "unit"]);
