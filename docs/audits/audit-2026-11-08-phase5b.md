@@ -75,6 +75,21 @@ fix. After it, Phase 5 can merge.
 *   **Note (no change needed):** "twelve thirty" reads as 42. Times are not measurements;
     leave it.
 
+### Z3 verified (round 3, backend `ba03321`, frontend `95c149f`). **Phase 5 passes.**
+
+*   **Real voice screen** (auditor's fake speech engine, fresh staging build, Chromium and
+    WebKit):
+    *   "one thirty" → measure empty, **Save disabled**; after choosing a measure, Save is
+        enabled;
+    *   "pulse sixty six" → heart rate, Save enabled.
+*   **Checks:** frontend unit 190/190 ×2; backend 106/106; typecheck clean; lint 0 errors;
+    `core/` identical; CI success on both heads.
+*   **Browser suites:**
+    *   CUJ 3/3 and offline-sync on Chromium and WebKit (real staging logins);
+    *   `bluetooth-voice` 6/6, import 6/6, offline routes 4/4.
+*   **Ready to merge and deploy on the author's go-ahead.** The backend has code changes
+    this phase (progress route), so the Worker **will** be redeployed.
+
 ### Z2 — Info
 
 *   Staging codes used this run: 6 synthetic `stg-astro-1` codes.
