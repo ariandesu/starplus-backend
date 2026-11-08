@@ -4,9 +4,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
+  findDosePatterns,
   hashText,
   validateFormularyEntry,
   validateKbEntry,
+  type KbEntry,
 } from "../src/content.ts";
 import { CATALOG } from "../src/catalog.ts";
 
@@ -59,5 +61,20 @@ describe("content citations", () => {
 
   it("content hashes use sha256 of the joined text", async () => {
     expect(await hashText(["a", "b"])).toBe(sha256(["a", "b"]));
+  });
+
+  it("rejects medication-dose patterns without a quoted source", () => {
+    expect(findDosePatterns(["take 2 tablets twice daily"])).toHaveLength(1);
+    expect(findDosePatterns(["give 200 mg now"])).toHaveLength(1);
+    expect(findDosePatterns(["repeat every 4 hours"])).toHaveLength(1);
+    expect(findDosePatterns(["Below 70 mg/dL scores watch"])).toHaveLength(0);
+    expect(findDosePatterns(["give 15 grams of fast sugar"])).toHaveLength(0);
+    expect(findDosePatterns(["100 to 120 per minute"])).toHaveLength(0);
+    const kb = join(contentDir, "kb");
+    for (const file of readdirSync(kb).filter((name) => name.endsWith(".json"))) {
+      const raw = JSON.parse(readFileSync(join(kb, file), "utf8")) as KbEntry;
+      if (raw.quoted_source) continue;
+      expect(findDosePatterns(raw.text), file).toEqual([]);
+    }
   });
 });

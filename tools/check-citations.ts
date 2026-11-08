@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CATALOG } from "../core/src/catalog.ts";
-import { FORMULARY_NO_DOSE, validateFormularyEntry, validateKbEntry } from "../core/src/content.ts";
+import { FORMULARY_NO_DOSE, findDosePatterns, validateFormularyEntry, validateKbEntry } from "../core/src/content.ts";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const contentDir = join(root, "..", "core", "content");
@@ -40,6 +40,11 @@ async function main(): Promise<void> {
     }
     const checked = await validateKbEntry(raw);
     if (!checked.ok) problems.push(`${file}: ${checked.reason}`);
+    else if (!raw.quoted_source) {
+      for (const line of findDosePatterns(raw.text)) {
+        problems.push(`${file}: medication-dose pattern without quoted_source: ${line.slice(0, 80)}`);
+      }
+    }
   }
 
   const formulary = JSON.parse(readFileSync(join(contentDir, "formulary.json"), "utf8")) as {

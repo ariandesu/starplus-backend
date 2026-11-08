@@ -1,5 +1,8 @@
 export interface KbCitation {
-  source: string;
+  title: string;
+  publisher: string;
+  year: string;
+  url: string;
   detail?: string;
 }
 
@@ -9,6 +12,8 @@ export interface KbEntry {
   title: string;
   text: string[];
   citations: KbCitation[];
+  design_note?: string;
+  quoted_source?: string;
   content_hash: string;
 }
 
@@ -24,6 +29,22 @@ export interface FormularyEntry {
 }
 
 export const FORMULARY_NO_DOSE = "per flight surgeon / mission protocol";
+
+const DOSE_PATTERNS = [
+  /\b\d[\d.,]*\s*(mg|mcg|ml|units?|tablets?|capsules?|doses?)\b(?!\s*\/)/i,
+  /\bdos(e|ing|age)\b/i,
+  /\bevery\s+\d+\s*(minutes?|hours?|hrs?)\b/i,
+];
+
+export function findDosePatterns(text: string[]): string[] {
+  const hits: string[] = [];
+  for (const line of text) {
+    for (const pattern of DOSE_PATTERNS) {
+      if (pattern.test(line)) hits.push(line);
+    }
+  }
+  return [...new Set(hits)];
+}
 
 export async function hashText(lines: string[]): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(lines.join("\n")));
@@ -47,9 +68,17 @@ export async function validateKbEntry(
     return { ok: false, reason: "at least one citation is required" };
   }
   for (const citation of entry.citations as Array<Record<string, unknown>>) {
-    if (typeof citation?.source !== "string" || citation.source.length === 0) {
-      return { ok: false, reason: "every citation needs a source" };
+    for (const key of ["title", "publisher", "year", "url"] as const) {
+      if (typeof citation?.[key] !== "string" || (citation[key] as string).length === 0) {
+        return { ok: false, reason: `every citation needs ${key}` };
+      }
     }
+  }
+  if (entry.design_note !== undefined && typeof entry.design_note !== "string") {
+    return { ok: false, reason: "design_note must be a string" };
+  }
+  if (entry.quoted_source !== undefined && typeof entry.quoted_source !== "string") {
+    return { ok: false, reason: "quoted_source must be a string" };
   }
   const expected = await hashText(entry.text as string[]);
   if (entry.content_hash !== expected) {

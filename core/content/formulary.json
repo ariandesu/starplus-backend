@@ -1,5 +1,5 @@
 {
-  "formulary_version": "1",
+  "formulary_version": "2",
   "entries": [
     {
       "id": "acetaminophen",
@@ -8,7 +8,14 @@
       "side_effects": "Liver injury in overdose or with regular alcohol use; rare serious skin reactions.",
       "interactions": "Warfarin effect may increase with regular use; many combination products already contain it — total daily amount counts.",
       "dose": "per flight surgeon / mission protocol",
-      "citations": [{ "source": "U.S. National Library of Medicine, DailyMed: acetaminophen drug label." }]
+      "citations": [
+        {
+          "title": "ACETAMINOPHEN TABLET [REMEDYREPACK INC.]",
+          "publisher": "U.S. National Library of Medicine",
+          "year": "2026",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=dc430980-5994-4e61-ad3d-181f5fdc769d"
+        }
+      ]
     },
     {
       "id": "ibuprofen",
@@ -17,7 +24,14 @@
       "side_effects": "Stomach pain, heartburn, fluid retention; cardiovascular and gastrointestinal risk rises with dose and duration; kidney injury in dehydration.",
       "interactions": "Avoid combining with other NSAIDs; caution with blood-pressure medicines, lithium and anticoagulants.",
       "dose": "per flight surgeon / mission protocol",
-      "citations": [{ "source": "U.S. National Library of Medicine, DailyMed: ibuprofen drug label." }]
+      "citations": [
+        {
+          "title": "ADVIL (IBUPROFEN) TABLET, COATED [HALEON US HOLDINGS LLC]",
+          "publisher": "U.S. National Library of Medicine",
+          "year": "2026",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=1a665e64-9f30-be37-4a83-38789f1f1e89"
+        }
+      ]
     },
     {
       "id": "loratadine",
@@ -26,7 +40,14 @@
       "side_effects": "Usually well tolerated; occasional headache, dry mouth or drowsiness.",
       "interactions": "Few known interactions; check against the mission formulary before combining sedating medicines.",
       "dose": "per flight surgeon / mission protocol",
-      "citations": [{ "source": "U.S. National Library of Medicine, DailyMed: loratadine drug label." }]
+      "citations": [
+        {
+          "title": "LORATADINE TABLET [BI-MART]",
+          "publisher": "U.S. National Library of Medicine",
+          "year": "2026",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=1dd299e7-dfdd-459b-bb2b-83e37dd2e63d"
+        }
+      ]
     }
   ]
 }
