@@ -17,19 +17,33 @@ interface Args {
   crew: string;
   csv: string;
   metrics: string[] | null;
+  person: string | null;
   limit: number;
 }
 
 function parseArgs(): Args {
   const values: Record<string, string[]> = {};
+  const positional: string[] = [];
   for (const arg of process.argv.slice(2)) {
-    const match = /^--([^=]+)=(.*)$/.exec(arg);
-    if (match) (values[match[1]] ??= []).push(match[2]);
+    const match = /^--([^= \t]+)(?:=(.*))?$/.exec(arg);
+    if (match) {
+      if (match[2] !== undefined) {
+        (values[match[1]] ??= []).push(match[2]);
+      } else {
+        positional.push(match[1]);
+      }
+      continue;
+    }
+    positional.push(arg);
+  }
+  for (let i = 0; i < positional.length - 1; i += 2) {
+    const key = positional[i].replace(/^--/, "");
+    (values[key] ??= []).push(positional[i + 1]);
   }
   const one = (name: string, fallback?: string): string => {
     if (values[name]?.[0] !== undefined) return values[name][0];
     if (fallback !== undefined) return fallback;
-    throw new Error(`missing --${name}=`);
+    throw new Error(`missing --${name}`);
   };
   return {
     base: one("base"),
@@ -37,6 +51,7 @@ function parseArgs(): Args {
     crew: one("crew"),
     csv: one("csv"),
     metrics: values["metric"] ?? null,
+    person: values["person"]?.[0] ?? null,
     limit: Number.parseInt(one("limit", "100000"), 10),
   };
 }
@@ -69,11 +84,13 @@ async function main(): Promise<void> {
   });
   if (!auth.ok) throw new Error(`login failed with ${auth.status}`);
   const session = (await auth.json()) as { token: string };
-  const rows = parseCsv(readFileSync(args.csv, "utf8")).slice(0, args.limit);
-  const baseDay = Date.UTC(2026, 8, 1);
+  let rows = parseCsv(readFileSync(args.csv, "utf8")).slice(0, args.limit);
+  if (args.person) rows = rows.filter((row) => row.person_id === args.person);
+  const now = Date.now();
   const items: Array<Record<string, unknown>> = [];
   rows.forEach((row, i) => {
-    const day = Number.parseInt(row.phase_day ?? "0", 10) || 0;
+    const measuredAt = new Date(now - (rows.length - 1 - i) * 3_600_000).toISOString();
+    const phaseDay = Number.parseInt(row.phase_day ?? "0", 10);
     for (const [column, cell] of Object.entries(row)) {
       if (META_COLUMNS.has(column)) continue;
       if (args.metrics && !args.metrics.includes(column)) continue;
@@ -86,7 +103,7 @@ async function main(): Promise<void> {
         value_num: value,
         value_text: null,
         unit: UNIT_FOR[column] ?? "",
-        measured_at: new Date(baseDay + day * 86_400_000).toISOString(),
+        measured_at: measuredAt,
         received_at: "",
         source: "import",
         device_id: "load-import",
@@ -96,7 +113,7 @@ async function main(): Promise<void> {
         provenance: "synthetic",
         setting: "iss",
         phase: row.phase || "inflight",
-        phase_day: Number.isInteger(day) ? day : null,
+        phase_day: Number.isInteger(phaseDay) ? phaseDay : null,
         supersedes_client_id: null,
         voided: 0,
         catalog_version: "1",
@@ -106,7 +123,7 @@ async function main(): Promise<void> {
   });
   let accepted = 0;
   let duplicates = 0;
-  const rejected: Array<unknown> = [];
+  const rejected: Array<{ client_id: string; reason: string }> = [];
   for (let i = 0; i < items.length; i += 100) {
     const chunk = items.slice(i, i + 100);
     const res = await fetch(`${args.base}/api/measurements/batch`, {
@@ -115,7 +132,11 @@ async function main(): Promise<void> {
       body: JSON.stringify({ schema_version: 1, catalog_version: "1", items: chunk, results: [] }),
     });
     if (!res.ok) throw new Error(`batch failed with ${res.status}`);
-    const body = (await res.json()) as { accepted: string[]; duplicates: string[]; rejected: unknown[] };
+    const body = (await res.json()) as {
+      accepted: string[];
+      duplicates: string[];
+      rejected: Array<{ client_id: string; reason: string }>;
+    };
     accepted += body.accepted.length;
     duplicates += body.duplicates.length;
     rejected.push(...body.rejected);
@@ -126,6 +147,10 @@ async function main(): Promise<void> {
       accepted,
       duplicates,
       rejected: rejected.length,
+      by_reason: rejected.reduce<Record<string, number>>((tally, entry) => {
+        tally[entry.reason] = (tally[entry.reason] ?? 0) + 1;
+        return tally;
+      }, {}),
       seconds: Math.round((Date.now() - started) / 1000),
     })
   );

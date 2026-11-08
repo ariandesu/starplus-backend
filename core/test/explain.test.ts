@@ -22,6 +22,13 @@ describe("explanation filters", () => {
     }
   });
 
+  it("matches words on boundaries, not inside other words", () => {
+    expect(filterExplanation("Check symptoms.", "Drink water.")).toEqual([]);
+    expect(filterExplanation("See you today.", "Drink water.")).toEqual([]);
+    expect(filterExplanation("The result is abnormal.", "Drink water.")).toEqual([]);
+    expect(filterExplanation("Take it daily.", "Drink water.")).not.toEqual([]);
+  });
+
   it("fills templates and requires every placeholder", () => {
     expect(fillTemplate("Value {{value}} {{unit}}.", { value: 72, unit: "bpm" })).toBe("Value 72 bpm.");
     expect(templateVariables("Value {{value}} {{unit}} and {{value}}.")).toEqual(["value", "unit"]);

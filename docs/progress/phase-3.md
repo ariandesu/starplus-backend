@@ -1,7 +1,10 @@
-# Phase 3 progress — settings, charts, surgeon, demo, explanations (in progress, NOT merged)
+# Phase 3 progress — settings, charts, surgeon, demo, explanations, CUJ suite (NOT merged, gate NOT passed)
 
-Phase 3 gate has NOT run yet: it needs staging access codes and a Meta API key,
-both of which only the author holds. Do NOT merge `phase-3` until the gate passes.
+The Phase 2 gate passed on staging (auditor ran `test/e2e/gate-live.spec.ts`: 4/4).
+The Phase 3 gate did NOT pass (audit `audit-2026-11-08-phase3a.md`): one
+offline test fails on query-string URLs (K1) and the explanation filter lets
+invented numbers through (K2). K1–K4 below are implemented on `phase-3`;
+do NOT merge until the auditor reruns the CUJ suite and the load test.
 
 ## 1. Design items (Phase 3: 58–68) — implementation complete
 
@@ -36,11 +39,29 @@ both of which only the author holds. Do NOT merge `phase-3` until the gate passe
 - S1 shared-device login, S2 per-device PIN salt, W1 branch-aware
   cross-repo core check (carried over).
 
+## 1b. Phase 3 gate fixes (audit-2026-11-08-phase3a, implemented, awaiting auditor rerun)
+
+- K1: all 15 app routes precached including `/result`; navigations match by
+  path ignoring the query string (custom `Route` with `ignoreSearch`
+  matching on the documents cache); new `test/e2e/offline-routes.spec.ts`
+  loads every route with and without a query, online then offline.
+- K2: `filterExplanation` checks every number one at a time against source
+  numbers (integers, decimals); word lists match on word boundaries; audit
+  probes added to `tools/eval/cases.json`. `pregenerate` NOT run (no key).
+- K3: `load-import` maps every row into the past ending at now, prints
+  rejections by reason, accepts `--person`, accepts `--name value` and
+  `--name=value`. Loads target dedicated crew `stg-load-1` (TO BE CREATED
+  by the author). Cleanup of `stg-astro-2` on staging PROPOSED, awaiting
+  explicit author OK — NOT done.
+- K4: gate commands in this report corrected (staging URL for the CUJ
+  suite; one code per Playwright project); audit copy is in
+  `docs/audits/`.
+
 ## 2. Checks (local, no codes needed)
 
-- Backend: `npm test` 14 files pass; typecheck, lint clean; citation check
-  green; coverage ≥85% lines on `core/`.
-- Frontend: typecheck, lint clean; 52 vitest tests pass; `next build
+- Backend: `npm test` 15 files pass; typecheck, lint clean; citation check
+  green; coverage 87% lines on `core/`.
+- Frontend: typecheck, lint clean; 53 vitest tests pass; `next build
   --webpack` succeeds.
 - Playwright (Chromium, local build): CUJ 1 offline green, CUJ 8 demo green;
   staging specs skip cleanly without codes.
@@ -48,16 +69,24 @@ both of which only the author holds. Do NOT merge `phase-3` until the gate passe
 
 ## 3. Phase 3 gate — STOPPED, needs the author
 
-Not run (needs author-held secrets):
-1. CUJ suite on Chromium and WebKit against staging (1 unused code each for
-   stg-astro-1, stg-astro-2, stg-fmo-1 remain):
-   `NEXT_PUBLIC_API_BASE=https://starplus-backend.shareflow.workers.dev npm run build && NEXT_PUBLIC_API_BASE=https://starplus-backend.shareflow.workers.dev STARPLUS_STAGING_CODE_ASTRO=<code> npx playwright test test/e2e/cuj.spec.ts`
-   (`npx playwright install chromium webkit` first if needed).
-2. Staging load test of 1,260 rows, e.g.:
-   `python ml/column_map.py ml/data/astronaut_health_SYNTHETIC.csv ml/maps/synthetic.yaml /tmp/mapped.csv && tsx tools/load-import.ts --base https://starplus-backend-staging.shareflow.workers.dev --code <code> --crew stg-astro-1 --csv /tmp/mapped.csv --metric heart_rate`
+Not run (needs author-held secrets and codes):
+1. CUJ suite against staging, one project at a time (each Playwright project
+   burns its own single-use code; codes for stg-astro-1 and stg-fmo-1 remain,
+   plus one for stg-load-1 once created):
+   `NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev npm run build && NEXT_PUBLIC_API_BASE=https://starplus-backend-staging.shareflow.workers.dev STARPLUS_STAGING_CODE_ASTRO=<code> npx playwright test test/e2e/cuj.spec.ts --project=chromium`
+   (`npx playwright install chromium webkit` first if needed; rerun with a
+   fresh code for `--project=webkit`).
+2. Create the dedicated load-test crew first (`POST /api/admin/crew` with
+   `{"id": "stg-load-1", "name": "Load", "role": "astronaut", "provenance": "synthetic"}`),
+   then the staging load test of 1,260 rows (both `--name value` and
+   `--name=value` forms work):
+   `python ml/column_map.py ml/data/astronaut_health_SYNTHETIC.csv ml/maps/synthetic.yaml /tmp/mapped.csv && tsx tools/load-import.ts --base https://starplus-backend-staging.shareflow.workers.dev --code <code> --crew stg-load-1 --csv /tmp/mapped.csv --metric heart_rate`
    (reruns are duplicates by design).
-3. Explanations: `MODEL_API_KEY=<key> npx tsx tools/pregenerate.ts`, review
+3. Optional staging cleanup (needs explicit author OK first — NOT done):
+   `DELETE FROM measurements WHERE crew_id = 'stg-astro-2'` on staging only,
+   to remove the 720 mixed-provenance rows from the earlier gate run.
+4. Explanations: `MODEL_API_KEY=<key> npx tsx tools/pregenerate.ts`, review
    each entry with `npx tsx tools/review.ts list` / `approve`, which ships
    `core/content/explain-cache.json` with `reviewed` items only.
-4. Then: merge both repos, deploy staging then production, smoke-test both
+5. Then: merge both repos, deploy staging then production, smoke-test both
    (the Phase 3 gate also ends the minimum version with a production deploy).

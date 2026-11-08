@@ -25,6 +25,18 @@
       "expect": "reject"
     },
     {
+      "name": "invented count with matching words",
+      "text": "Take 400 more readings at 15 percent.",
+      "source": "SpO2 92 to 93 percent is watch. Tell the crew medical officer about any amber or red result.",
+      "expect": "reject"
+    },
+    {
+      "name": "invented frequency beside a source number",
+      "text": "A low reading 3 times means you should rest.",
+      "source": "Recheck on day 7. A low reading needs rest. Tell the crew medical officer.",
+      "expect": "reject"
+    },
+    {
       "name": "clean guidance",
       "text": "Sit with back supported, feet flat, arm at heart level.",
       "source": "Sit with back supported, feet flat, arm at heart level. Record systolic together with diastolic as one pair.",

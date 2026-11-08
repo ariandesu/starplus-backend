@@ -71,3 +71,14 @@ touching HANDOFF section 5 needs approval before merging.
     provenance `synthetic`).
 *   **Status:** APPROVED by the author 2026-11-08. `docs/demo-script.md`
     updated to match.
+
+## 2026-11-08 — `tools/prompts/result-template.md` removed (documented)
+
+*   **Design section:** Phase 3 item 65.
+*   **What the design says:** pregenerate reads `tools/prompts/result-template.md`.
+*   **What is implemented instead:** the prompt file is removed. Per-entry
+    explanations (`tools/prompts/explain-entry.md`) already produce standard and
+    simple sections; on the device, result explanations are filled from reviewed
+    knowledge-base entries with `core/explain/templates.ts`. A separate
+    result-template prompt had no consumer and no cache entry to live in.
+*   **Rule impact:** none (build-time tooling only, no shipped content changes).
