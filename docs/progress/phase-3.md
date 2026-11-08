@@ -44,7 +44,9 @@ do NOT merge until the auditor reruns the CUJ suite and the load test.
 - K1: all 15 app routes precached including `/result`; navigations match by
   path ignoring the query string (custom `Route` with `ignoreSearch`
   matching on the documents cache); new `test/e2e/offline-routes.spec.ts`
-  loads every route with and without a query, online then offline.
+  loads every route with and without a query, online then offline. Staging
+  deployed with the fix (worker `b9b738f6`); preflight from localhost:3100
+  returns the allow header, foreign origins get none, production unchanged.
 - K2: `filterExplanation` checks every number one at a time against source
   numbers (integers, decimals); word lists match on word boundaries; audit
   probes added to `tools/eval/cases.json`. `pregenerate` NOT run (no key).
