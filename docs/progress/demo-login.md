@@ -73,9 +73,25 @@ One-tap demo login with a pre-filled 30-day history (request-2026-11-08-demo-log
   (and the other flags) are gone. Docs updated.
 - DD4: removed the unused imports; CI links below.
 
+## EE1 fixes (audit-2026-11-08-demo-login-b, do not merge)
+
+- Backend: `POST /api/auth/demo` has its own limiter (`RATE_LIMIT_DEMO`,
+  120/min per IP; prod namespace 1003, staging 2003). `/api/auth` stays at
+  10/min. 429s carry `Retry-After: 60`, exposed through CORS so the browser
+  can read it.
+- Frontend: on a demo 429 the button shows "Lots of people are trying the
+  demo right now. Retrying…", retries automatically after `Retry-After`
+  (default 5 s) up to 3 times, then shows the error with a Try again button.
+  `?demo=` reuses a live demo session with no new request.
+- Tests: 30 demo logins from one IP all succeed (route); the 429 header and
+  fail-closed behavior are unit-tested; `test/e2e/demo-retry.spec.ts` covers
+  retry-then-home, permanent-429 with Try again, and session reuse (fetch
+  stubbed in-page so it runs everywhere).
+- Disclosure: the demo history sentence is added.
+
 ## Verification (local backend + seeded data, both browsers)
 
-- Backend 123/123, frontend 209/209; typecheck clean; lint 0 errors;
+- Backend 127/127, frontend 211/211; typecheck clean; lint 0 errors;
   citations ok; `core/` identical.
 - CI green on both heads:
   backend https://github.com/ariandesu/starplus-backend/actions/runs/42506297595 ;

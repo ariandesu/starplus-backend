@@ -33,7 +33,7 @@ export function corsHeaders(request: Request, requestId: string): Record<string,
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
     "X-Request-Id": requestId,
-    "Access-Control-Expose-Headers": "X-Request-Id",
+    "Access-Control-Expose-Headers": "X-Request-Id, Retry-After",
   };
   const origin = allowedOrigin(request);
   if (origin) headers["Access-Control-Allow-Origin"] = origin;

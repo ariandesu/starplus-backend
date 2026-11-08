@@ -12,7 +12,7 @@ import type { Env } from "./env";
 import { checkAuth, error, json, preflight, readJsonObject, requestStore } from "./http";
 import { handleBatch, handleSync } from "./sync";
 import { handleAckReport, handleGetAttachment, handleGetReports, handlePostAttachment, handlePostReport } from "./reports";
-import { checkApiLimit, checkAuthLimit } from "./ratelimit";
+import { checkApiLimit, checkAuthLimit, checkDemoLimit } from "./ratelimit";
 import { parseLimit, validateAstronaut, validateId, validateVitals } from "./validate";
 import { recomputeWatchSignals } from "./watch";
 
@@ -84,7 +84,7 @@ async function handle(request: Request, env: Env): Promise<Response> {
   }
   if (path === "/api/auth/demo") {
     if (method !== "POST") return error(405, "Method not allowed", request, requestId);
-    const limited = await checkAuthLimit(request, env, requestId);
+    const limited = await checkDemoLimit(request, env, requestId);
     if (limited) return limited;
     return handleDemoAuth(request, env, requestId);
   }

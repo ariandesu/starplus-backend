@@ -13,4 +13,6 @@ export interface Env {
   EXTRA_ALLOWED_ORIGINS?: string;
   /** Set to "on" to enable one-tap demo login. Staging and production only. */
   DEMO_LOGIN?: string;
+  /** Demo-login rate limiter (120/min). Required in production and staging. */
+  RATE_LIMIT_DEMO?: RateLimit;
 }

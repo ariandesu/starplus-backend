@@ -19,7 +19,10 @@ export async function checkRateLimit(
 ): Promise<Response | null> {
   if (!binding) return null;
   const { success } = await binding.limit({ key });
-  return success ? null : error(429, "Rate limited", request, requestId);
+  if (success) return null;
+  const limited = error(429, "Rate limited", request, requestId);
+  limited.headers.set("Retry-After", "60");
+  return limited;
 }
 
 export async function checkAuthLimit(request: Request, env: Env, requestId: string): Promise<Response | null> {
@@ -34,6 +37,20 @@ export async function checkAuthLimit(request: Request, env: Env, requestId: stri
     return null;
   }
   return checkRateLimit(env.RATE_LIMIT_AUTH, `ip:${clientIp(request)}`, request, requestId);
+}
+
+export async function checkDemoLimit(request: Request, env: Env, requestId: string): Promise<Response | null> {
+  if (!env.RATE_LIMIT_DEMO) {
+    if (
+      (env.ENVIRONMENT === "production" || env.ENVIRONMENT === "staging") &&
+      env.TEST_MIGRATIONS === undefined
+    ) {
+      console.error(`rate-limit binding RATE_LIMIT_DEMO is missing in ${env.ENVIRONMENT}`);
+      return error(503, "Rate limiting unavailable", request, requestId);
+    }
+    return null;
+  }
+  return checkRateLimit(env.RATE_LIMIT_DEMO, `ip:${clientIp(request)}`, request, requestId);
 }
 
 export async function checkApiLimit(request: Request, env: Env, requestId: string): Promise<Response | null> {

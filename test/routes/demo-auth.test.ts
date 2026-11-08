@@ -88,10 +88,22 @@ describe("demo login", () => {
       const res = await demoLogin(role);
       expect(res.status).toBe(200);
       const body = (await res.json()) as Record<string, unknown>;
-      expect(body).toMatchObject({ crew_id, role, provenance: "synthetic", demo: true });
+      expect(body).toMatchObject({ crew_id: crew_id, role, provenance: "synthetic", demo: true });
       const ttl = Date.parse(body.expires_at as string) - before;
       expect(ttl).toBeGreaterThan(23 * 3_600_000);
       expect(ttl).toBeLessThanOrEqual(24 * 3_600_000 + 5000);
+    }
+  });
+
+  it("lets 30 demo logins from one IP through within a minute", async () => {
+    for (let i = 0; i < 30; i++) {
+      const res = await SELF.fetch("https://example.com/api/auth/demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.9" },
+        body: JSON.stringify({ role: i % 2 === 0 ? "astronaut" : "flight_medical_officer", device_id: `device-burst-${i}` }),
+      });
+      expect(res.status).toBe(200);
+      await res.json();
     }
   });
 
