@@ -34,8 +34,21 @@ touching HANDOFF section 5 needs approval before merging.
 *   **Rule impact:** safety-limit evaluation is involved, so this needs the
     author's approval before merge. No limit value, level or citation changed.
 *   **Status:** APPROVED by the author 2026-11-08. The `max` bound stays.
-    Condition: the 25-value boundary check in `core/test/assess.test.ts`
+    Condition: the 25-value boundary check in `core/test/content.test.ts`
     ("limit boundaries match the design table") guards the bounded bands.
+
+## 2026-11-08 — pregenerate reads MODEL_API_KEY from the environment (implemented per HANDOFF §3)
+
+*   **Design section:** Phase 3 item 65 (`tools/pregenerate.ts` reads the key from `../.secrets/meta-model-api-key`).
+*   **What the design says:** read the Meta key from a workspace file.
+*   **What is implemented instead:** `tools/pregenerate.ts` reads `MODEL_API_KEY` from the
+    process environment and refuses to run without it. Nothing is ever read from
+    `.secrets/` or committed.
+*   **Why:** HANDOFF §3 (Contributor-mode warning: Meta may train on everything the builder
+    sends) requires the key in the shell environment, never in a workspace file.
+*   **Rule impact:** none beyond strengthening rule 11 (no secrets in the repo).
+*   **Status:** implemented per HANDOFF instruction; no generated explanations ship until
+    the author runs it with their own key in their own shell.
 
 ## 2026-11-08 — demo scenes run on staging, not in demo mode (APPROVED 2026-11-08)
 
