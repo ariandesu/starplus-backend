@@ -9,7 +9,7 @@ import { handleCrewProgress } from "./progress";
 import type { Env } from "./env";
 import { checkAuth, error, json, preflight, readJsonObject, requestStore } from "./http";
 import { handleBatch, handleSync } from "./sync";
-import { handleAckReport, handleGetReports, handlePostReport } from "./reports";
+import { handleAckReport, handleGetAttachment, handleGetReports, handlePostAttachment, handlePostReport } from "./reports";
 import { checkApiLimit, checkAuthLimit } from "./ratelimit";
 import { parseLimit, validateAstronaut, validateId, validateVitals } from "./validate";
 import { recomputeWatchSignals } from "./watch";
@@ -99,6 +99,18 @@ async function handle(request: Request, env: Env): Promise<Response> {
     const limited = await checkApiLimit(request, env, requestId);
     if (limited) return limited;
     return handleAckReport(request, env, requestId);
+  }
+  if (path === "/api/attachments") {
+    if (method !== "POST") return error(405, "Method not allowed", request, requestId);
+    const limited = await checkApiLimit(request, env, requestId);
+    if (limited) return limited;
+    return handlePostAttachment(request, env, requestId);
+  }
+  if (path.startsWith("/api/attachments/")) {
+    if (method !== "GET") return error(405, "Method not allowed", request, requestId);
+    const limited = await checkApiLimit(request, env, requestId);
+    if (limited) return limited;
+    return handleGetAttachment(request, env, requestId, path.slice("/api/attachments/".length));
   }
 
   // ---- Flight surgeon ----

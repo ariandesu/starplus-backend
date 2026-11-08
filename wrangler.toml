@@ -9,6 +9,10 @@ binding = "DB"
 database_name = "starplus-db"
 database_id = "9bb87c70-4c20-4b02-bc8f-299667595bcd"
 
+[[r2_buckets]]
+binding = "ATTACHMENTS"
+bucket_name = "starplus-attachments"
+
 [vars]
 ENVIRONMENT = "production"
 
@@ -34,6 +38,10 @@ crons = []
 binding = "DB"
 database_name = "starplus-db-staging"
 database_id = "a164514c-82fb-461a-b5a7-5b515b1f02e6"
+
+[[env.staging.r2_buckets]]
+binding = "ATTACHMENTS"
+bucket_name = "starplus-attachments-staging"
 
 [[env.staging.ratelimits]]
 name = "RATE_LIMIT_AUTH"

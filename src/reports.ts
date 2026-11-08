@@ -3,6 +3,8 @@ import type { Env } from "./env.ts";
 import { error, json } from "./http.ts";
 import { requireSession, sessionError } from "./auth.ts";
 
+export const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
+
 const REPORT_COLUMNS = [
   "client_id",
   "device_id",
@@ -114,4 +116,64 @@ export async function handleAckReport(request: Request, env: Env, requestId: str
     .run();
   if (updated.meta.changes === 0) return error(404, "Unknown report", request, requestId);
   return json({ acknowledged: client_id }, request, requestId);
+}
+
+export async function handlePostAttachment(request: Request, env: Env, requestId: string): Promise<Response> {
+  const session = await requireSession(request, env, ["astronaut", "flight_medical_officer", "mission_control"]);
+  if (!session.ok) return sessionError(session, request, requestId);
+  if (!env.ATTACHMENTS) return error(503, "Attachments unavailable", request, requestId);
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return error(400, "Body must be a JSON object", request, requestId);
+  }
+  const item = (body as Record<string, unknown> | null) ?? {};
+  if (!isUUID(item.id)) return error(400, "Invalid attachment", request, requestId);
+  if (typeof item.report_client_id !== "string" || !isUUID(item.report_client_id)) {
+    return error(400, "Invalid attachment", request, requestId);
+  }
+  if (typeof item.content_type !== "string" || !item.content_type.startsWith("image/")) {
+    return error(400, "Invalid attachment", request, requestId);
+  }
+  if (typeof item.data_base64 !== "string" || item.data_base64.length === 0) {
+    return error(400, "Invalid attachment", request, requestId);
+  }
+  let bytes: Uint8Array;
+  try {
+    const binary = atob(item.data_base64);
+    bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  } catch {
+    return error(400, "Invalid attachment", request, requestId);
+  }
+  if (bytes.byteLength > MAX_ATTACHMENT_BYTES) return error(413, "Attachment exceeds 2 MB", request, requestId);
+  await env.ATTACHMENTS.put(`attachments/${item.id}`, bytes, {
+    httpMetadata: { contentType: item.content_type },
+    customMetadata: { submitted_by: session.crew_id, report_client_id: item.report_client_id },
+  });
+  return json({ id: item.id, size: bytes.byteLength }, request, requestId, 201);
+}
+
+export async function handleGetAttachment(
+  request: Request,
+  env: Env,
+  requestId: string,
+  id: string
+): Promise<Response> {
+  const session = await requireSession(request, env, ["astronaut", "flight_medical_officer", "mission_control"]);
+  if (!session.ok) return sessionError(session, request, requestId);
+  if (!env.ATTACHMENTS) return error(503, "Attachments unavailable", request, requestId);
+  if (!isUUID(id)) return error(400, "Invalid attachment id", request, requestId);
+  const object = await env.ATTACHMENTS.get(`attachments/${id}`);
+  if (!object) return error(404, "Unknown attachment", request, requestId);
+  const submittedBy = object.customMetadata?.submitted_by;
+  if (submittedBy !== session.crew_id && session.role !== "flight_medical_officer") {
+    return error(403, "Forbidden", request, requestId);
+  }
+  return new Response(object.body, {
+    headers: {
+      "Content-Type": object.httpMetadata?.contentType ?? "application/octet-stream",
+      "Cache-Control": "private, max-age=3600",
+    },
+  });
 }
