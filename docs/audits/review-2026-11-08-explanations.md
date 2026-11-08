@@ -70,6 +70,21 @@ be kept, with nothing added.
 *   **Fix:** log the rejection, skip that entry, continue, and write the cache after each
     entry. Exit non-zero if anything was skipped.
 
+## Round 2 (after T1–T3)
+
+The 6 rejected entries were regenerated with the qualifier-safe prompt and must-keep filter
+(`starplus-backend` `9e80e96`). None was blocked by the filter. All 6 now copy the source's
+conditions word for word:
+*   CPR and unresponsive person keep "no normal breathing" and "if breathing normally";
+*   distance keeps "no reply comes sooner than";
+*   chest pain keeps "never delay the call for help over medicine";
+*   reaction keeps "goes to the crew medical officer before safety-critical tasks";
+*   temperature no longer says "core".
+
+**All 6 reviewed.** The cache now holds **33 of 33 `reviewed`**, file SHA-256 prefix
+`e1ffa448f3791b23`. It is uncommitted in `starplus-backend`; the builder commits it as is and
+runs `sync-core`.
+
 ## Order of work
 
 1.  **Builder:**

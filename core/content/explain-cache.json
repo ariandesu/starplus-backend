@@ -20,10 +20,10 @@
       "status": "reviewed"
     },
     "e19dd77bbc83f9ec44e8f2ffeffd84c4857160b8fc20e6360141ebf033cb1f03:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
-      "standard": "Stop all activity. Sit the person down to rest. Keep them calm. Keep them still. Ask about the pain. Check for pressure. Check for spread to arm, neck or jaw. Check for sweating. Check for nausea. Check for breathlessness. Give aspirin only if the mission protocol covers it. Do not give aspirin if there is allergy. Never delay the call for help over medicine. Get the crew medical officer at once. Get the emergency loop at once. Prepare for CPR if they collapse.",
-      "simple": "Stop all activity. Sit the person down to rest. Keep them calm and still. Ask about the pain. Look for pressure. Look for spread to arm, neck or jaw. Look for sweating. Look for nausea. Look for breathlessness. Give aspirin only if the mission protocol covers it and there is no allergy. Never wait to call for help to give medicine. Get the crew medical officer at once. Get the emergency loop at once. Be ready for CPR if they collapse.",
+      "standard": "Stop all activity and sit the person down to rest.\nKeep them calm and still.\nAsk about the pain and check for warning signs: pressure, spread to arm, neck or jaw, sweating, nausea, breathlessness.\nGive aspirin only if the mission protocol covers it and there is no allergy.\nNever delay the call for help over medicine.\nGet the crew medical officer and the emergency loop at once.\nPrepare for CPR if they collapse.",
+      "simple": "Stop all activity.\nSit the person down to rest.\nKeep them calm and still.\nAsk about the pain.\nCheck for warning signs: pressure, spread to arm, neck or jaw, sweating, nausea, breathlessness.\nGive aspirin only if the mission protocol covers it and there is no allergy.\nNever delay the call for help over medicine.\nGet the crew medical officer and the emergency loop at once.\nPrepare for CPR if they collapse.",
       "model": "muse-spark-1.3-contributor",
-      "status": "rejected"
+      "status": "reviewed"
     },
     "441ab44e21378d9093d595803ac227768815e5b4bba13b92b9dc7f7bf7198fe9:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
       "standard": "Ask: are you choking?\nIf they can cough forcefully, encourage coughing. Watch closely.\nIf they cannot speak, cough or breathe, give up to 5 back blows. Give blows between the shoulder blades. Use the heel of the hand.\nIf blows fail, give up to 5 abdominal thrusts. Place fist above the navel. Pull quick inward and upward.\nAlternate 5 blows and 5 thrusts.\nIf they collapse, start CPR. Call for the crew medical officer.",
@@ -32,10 +32,10 @@
       "status": "reviewed"
     },
     "fec03b9b43f54cb5594c80db0ca8368287f4003850c45b640f49c71bd677222c:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
-      "standard": "If there is no breathing, start compressions at once.\nPlace the heel of the hand on the centre of the chest.\nPush 100 to 120 per minute.\nPush 5 to 6 cm deep.\nAllow full recoil between pushes.\nGive 30 compressions then 2 rescue breaths.\nKeep pauses minimal.\nAttach the AED as soon as it arrives.\nFollow its voice prompts.\nClear the person before any shock.\nDo not stop except to swap rescuers, follow the AED, or on signs of life.\nHand over to the crew medical officer.",
-      "simple": "If the person is not breathing, start compressions at once.\nPut the heel of the hand on the centre of the chest.\nPush 100 to 120 per minute.\nPush 5 to 6 cm deep.\nLet the chest come fully back up between pushes.\nDo 30 pushes then give 2 rescue breaths.\nKeep pauses very short.\nAttach the AED as soon as it arrives.\nFollow its voice prompts.\nMove away from the person before any shock.\nDo not stop except to swap rescuers, follow the AED, or on signs of life.\nHand over to the crew medical officer.",
+      "standard": "Start compressions at once if there is no normal breathing.\nPut the heel of the hand on the centre of the chest.\nPush 100 to 120 per minute.\nPush 5 to 6 cm deep.\nAllow full recoil between pushes.\nGive 30 compressions then 2 rescue breaths.\nKeep going with minimal pauses.\nAttach the AED as soon as it arrives.\nFollow its voice prompts.\nClear the person before any shock.\nDo not stop except to swap rescuers, follow the AED, or on signs of life.\nHand over to the crew medical officer.",
+      "simple": "Start chest pushes at once if there is no normal breathing.\nPlace the heel of the hand on the centre of the chest.\nPush 100 to 120 per minute.\nPush 5 to 6 cm deep.\nAllow full recoil between pushes.\nGive 30 compressions then 2 rescue breaths.\nKeep going with minimal pauses.\nAttach the AED as soon as it arrives.\nFollow its voice prompts.\nClear the person before any shock.\nDo not stop except to swap rescuers, follow the AED, or on signs of life.\nHand over to the crew medical officer.",
       "model": "muse-spark-1.3-contributor",
-      "status": "rejected"
+      "status": "reviewed"
     },
     "2e1b55396605ef3c52bab0bc333ee54b2c432d8d8d9c6212cf1bc4df77c537e3:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
       "standard": "Catch the fall safely.\nLay the person flat.\nRaise the legs slightly.\nLoosen tight clothing.\nLet fresh air reach them.\nMost fainting passes within a minute or two.\nIf they do not wake quickly, treat as unresponsive.\nGet the crew medical officer.\nAfter recovery, sit up slowly.\nCheck for injury from the fall.\nLog the episode.",
@@ -50,10 +50,10 @@
       "status": "reviewed"
     },
     "0c86c1ce5ced52655872b862c86c83211534c5a7c9db3ed42b8d44a547d49edd:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
-      "standard": "Check the scene is safe. Tap the shoulders and shout: are you okay? Call for the crew medical officer. Put the emergency call out on the loop. Open the airway with head tilt, chin lift. Check for breathing for no more than 10 seconds. If breathing, place in the recovery position. Then monitor. If not breathing, start CPR immediately.",
-      "simple": "See that the scene is safe. Tap the shoulders and shout: are you okay? Call for the crew medical officer. Put the emergency call out on the loop. Tilt the head and lift the chin to open the airway. Check for breathing for no more than 10 seconds. If breathing, use the recovery position. Then monitor. If not breathing, start CPR immediately.",
+      "standard": "Check the scene is safe, then tap the shoulders and shout: are you okay?\nCall for the crew medical officer and put the emergency call out on the loop.\nOpen the airway with head tilt, chin lift; check for normal breathing for no more than 10 seconds.\nIf breathing normally, place in the recovery position and monitor. If not breathing normally, start CPR immediately.",
+      "simple": "Check that the scene is safe.\nThen tap the shoulders and shout: are you okay?\nCall for the crew medical officer.\nPut the emergency call out on the loop.\nOpen the airway with head tilt, chin lift.\nCheck for normal breathing for no more than 10 seconds.\nIf breathing normally, place in the recovery position and monitor.\nIf not breathing normally, start CPR immediately.",
       "model": "muse-spark-1.3-contributor",
-      "status": "rejected"
+      "status": "reviewed"
     },
     "21cbc37131c2287283ebce91aff0db698b0d4e82f05fbe3a0913e68aee0fb6b3:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
       "standard": "Microgravity shifts fluid toward the head.\nIt unloads bone and muscle.\nIt changes heart, pressure and temperature regulation.\nDaily resistive and aerobic countermeasures slow the loss.\nThe app tracks body mass, pressure and temperature trends against the personal baseline.\nDizziness on return to gravity is expected.\nMove slowly.\nSit before standing.",
@@ -62,10 +62,10 @@
       "status": "reviewed"
     },
     "4dec9bc93c6803071abf286651fd7990c9b8ee9886f81d7621181367d878730c:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
-      "standard": "On a Mars transit a message takes 4 to 22 minutes each way.\nNo reply comes sooner than about 8 to 44 minutes.\nBlackouts add on top.\nThe crew must assess, decide and act alone.\nThis app's offline scoring and cited next steps exist for exactly that gap.\nQueue every report and measurement for delivery.\nThe app sends them when the link returns.",
-      "simple": "You send a message. It takes 4 to 22 minutes to arrive.\nA reply takes about 8 to 44 minutes to come back.\nBlackouts make the wait longer.\nYou must assess, decide and act alone.\nThis app gives offline scoring and cited next steps for that gap.\nPut every report and measurement in the queue.\nThe app sends them when the link returns.",
+      "standard": "On a Mars transit a message takes 4 to 22 minutes each way.\nSo no reply comes sooner than about 8 to 44 minutes, with blackouts on top.\nThe crew must assess, decide and act alone.\nThis app's offline scoring and cited next steps exist for exactly that gap.\nQueue every report and measurement for delivery.\nThe app sends them when the link returns.",
+      "simple": "On a Mars transit a message takes 4 to 22 minutes each way.\nSo no reply comes sooner than about 8 to 44 minutes, with blackouts on top.\nThe crew must assess, decide and act alone.\nThe offline scoring and cited next steps in this app exist for exactly that gap.\nQueue every report and measurement for delivery.\nThe app sends them when the link returns.",
       "model": "muse-spark-1.3-contributor",
-      "status": "rejected"
+      "status": "reviewed"
     },
     "7e5efc690c13140b228322dbf2dd95d7d85326e9eac5c3a9dc0a991f111875d4:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
       "standard": "The environment is hostile and closed.\nThe cabin is a closed loop.\nAir, water and microbes are recycled.\nTrace contaminants, dust and noise accumulate.\nLife-support alarms outrank every app reading.\nOn any atmosphere alarm, follow the emergency procedures.\nDo not follow this screen.\nReport headaches, irritation or breathing changes promptly.\nThis lets patterns show in the history.",
@@ -140,10 +140,10 @@
       "status": "reviewed"
     },
     "4033a48916e2b404c525c0ecf43dfbf0c2c791f2855a36e5263b4345d15345e7:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
-      "standard": "Reaction time test.\nRun the test rested.\nUse a quiet moment.\nUse the same hand and device.\nTake the median of the taps.\nIgnore the first practice tap.\nThere is no published limit.\nA clear slowdown against the personal baseline goes to the crew medical officer.\nSleepiness that will not lift goes to the crew medical officer.\nDo this before safety-critical tasks.",
-      "simple": "This is about reaction time.\nBe rested.\nPick a quiet moment.\nUse the same hand.\nUse the same device.\nUse the taps for the median.\nSkip the first practice tap.\nThere is no published limit.\nIf there is a clear slowdown from the personal baseline, go to the crew medical officer.\nIf sleepiness will not lift, go to the crew medical officer.\nDo this before safety-critical tasks.",
+      "standard": "Run the test rested, in a quiet moment, with the same hand and device. Take the median of the taps; ignore the first practice tap. There is no published limit. A clear slowdown against the personal baseline, or sleepiness that will not lift, goes to the crew medical officer before safety-critical tasks.",
+      "simple": "This is reaction time. Run the test rested, in a quiet moment, with the same hand and device. Take the median of the taps; ignore the first practice tap. There is no published limit. A clear slowdown against the personal baseline goes to the crew medical officer before safety-critical tasks. Sleepiness that will not lift goes to the crew medical officer before safety-critical tasks.",
       "model": "muse-spark-1.3-contributor",
-      "status": "rejected"
+      "status": "reviewed"
     },
     "2ff4fcb55bd807d11feb98fd76d9de8578115fff9fc6c20030118290766965ad:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
       "standard": "Count breaths for 30 seconds while the person rests and is not speaking. Then double the count. Do not tell them you are counting. Telling them changes the rate. 21 to 24 breaths per minute scores watch. 25 or above, or 8 or below, scores critical. Tell the crew medical officer about those results.",
@@ -182,10 +182,10 @@
       "status": "reviewed"
     },
     "37ea87a3b6e7328a581d09b50d60748083ae2684d728b06f2db67023ceaeca57:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
-      "standard": "Measure core body temperature at rest. Use the same calibrated device and method each time. In flight the body runs about 1 °C higher than on Earth. The app shifts the personal baseline but never the limit. 39.1 °C or above scores watch. 35.0 °C or below scores critical. Tell the crew medical officer about any amber or red result.",
-      "simple": "Take the temperature at rest. Always use the same calibrated device and method. The body runs about 1 °C higher in flight than on Earth. The app shifts the personal baseline. The app never shifts the limit. 39.1 °C or above scores watch. 35.0 °C or below scores critical. Tell the crew medical officer about any amber or red result.",
+      "standard": "Measure with the same calibrated device and method each time, at rest. In flight the body runs about 1 °C higher than on Earth. The app shifts the personal baseline but never the limit. 39.1 °C or above scores watch. 35.0 °C or below scores critical. Tell the crew medical officer about any amber or red result.",
+      "simple": "Use the same calibrated device and method each time. Be at rest. The body runs about 1 °C higher in flight than on Earth. The app shifts the personal baseline. It never shifts the limit. 39.1 °C or above scores watch. 35.0 °C or below scores critical. Tell the crew medical officer about any amber or red result.",
       "model": "muse-spark-1.3-contributor",
-      "status": "rejected"
+      "status": "reviewed"
     },
     "1aa47779bf412a4aeec67587d22b592fdeb29eb9e616cd3611e04d179c0d77ac:standard+simple:muse-spark-1.3-contributor:prompts-v1": {
       "standard": "Log litres drunk through the day against the mission fluid plan. There is no published limit. The trend against the personal baseline is what matters. Low intake with dark urine or dizziness goes to the crew medical officer.",
