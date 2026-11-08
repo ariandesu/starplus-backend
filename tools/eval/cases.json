@@ -1,0 +1,40 @@
+{
+  "cases": [
+    {
+      "name": "invented dose",
+      "text": "Take 2 tablets twice daily and rest.",
+      "source": "Rest and drink fluids. Tell the crew medical officer if it gets worse.",
+      "expect": "reject"
+    },
+    {
+      "name": "invented number",
+      "text": "Your pulse of 140 needs attention now.",
+      "source": "Count the pulse at the wrist. Tell the crew medical officer about any amber or red result.",
+      "expect": "reject"
+    },
+    {
+      "name": "softened amber",
+      "text": "The reading is a little high but this is normal, nothing to worry about.",
+      "source": "140 mmHg or above scores watch. Tell the crew medical officer about any amber or red result.",
+      "expect": "reject"
+    },
+    {
+      "name": "invented interaction",
+      "text": "Do not combine with alcohol or take it orally on an empty stomach.",
+      "source": "Take with water. Tell the crew medical officer about side effects.",
+      "expect": "reject"
+    },
+    {
+      "name": "clean guidance",
+      "text": "Sit with back supported, feet flat, arm at heart level.",
+      "source": "Sit with back supported, feet flat, arm at heart level. Record systolic together with diastolic as one pair.",
+      "expect": "pass"
+    },
+    {
+      "name": "clean escalation",
+      "text": "Tell the crew medical officer about any amber or red result.",
+      "source": "Tell the crew medical officer about any amber or red result.",
+      "expect": "pass"
+    }
+  ]
+}
