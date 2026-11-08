@@ -112,13 +112,19 @@ export async function handleGetReports(request: Request, env: Env, requestId: st
   if (!session.ok) return sessionError(session, request, requestId);
   const since = url.searchParams.get("since");
   const order = url.searchParams.get("order") === "desc" ? "DESC" : "ASC";
+  const demoOnly = session.demo
+    ? `AND (sc.provenance = 'synthetic' OR jc.provenance = 'synthetic')`
+    : "";
+  const from = `FROM reports r
+    LEFT JOIN crew sc ON sc.id = r.submitted_by
+    LEFT JOIN crew jc ON jc.id = r.subject_crew_id`;
   const { results } = since
     ? await env.DB.prepare(
-        `SELECT * FROM reports WHERE received_at > ? ORDER BY received_at ${order}, client_id ${order} LIMIT 500`
+        `SELECT r.* ${from} WHERE r.received_at > ? ${demoOnly} ORDER BY r.received_at ${order}, r.client_id ${order} LIMIT 500`
       )
         .bind(since)
         .all()
-    : await env.DB.prepare(`SELECT * FROM reports ORDER BY received_at ${order}, client_id ${order} LIMIT 500`).all();
+    : await env.DB.prepare(`SELECT r.* ${from} WHERE 1 = 1 ${demoOnly} ORDER BY r.received_at ${order}, r.client_id ${order} LIMIT 500`).all();
   return json({ reports: results }, request, requestId);
 }
 
@@ -133,6 +139,17 @@ export async function handleAckReport(request: Request, env: Env, requestId: str
   }
   const client_id = (body as Record<string, unknown> | null)?.client_id;
   if (typeof client_id !== "string") return error(400, "client_id is required", request, requestId);
+  if (session.demo) {
+    const target = await env.DB.prepare(
+      `SELECT r.client_id FROM reports r
+       LEFT JOIN crew sc ON sc.id = r.submitted_by
+       LEFT JOIN crew jc ON jc.id = r.subject_crew_id
+       WHERE r.client_id = ? AND (sc.provenance = 'synthetic' OR jc.provenance = 'synthetic')`
+    )
+      .bind(client_id)
+      .first();
+    if (!target) return error(403, "Forbidden", request, requestId);
+  }
   const now = new Date().toISOString();
   const updated = await env.DB.prepare(
     "UPDATE reports SET status = 'acknowledged', acknowledged_by = ?, acknowledged_at = ? WHERE client_id = ?"
@@ -207,6 +224,12 @@ export async function handleGetAttachment(
   const submittedBy = object.customMetadata?.submitted_by;
   if (submittedBy !== session.crew_id && session.role !== "flight_medical_officer") {
     return error(403, "Forbidden", request, requestId);
+  }
+  if (session.demo) {
+    const owner = submittedBy
+      ? await env.DB.prepare("SELECT provenance FROM crew WHERE id = ?").bind(submittedBy).first<{ provenance: string }>()
+      : null;
+    if (!owner || owner.provenance !== "synthetic") return error(403, "Forbidden", request, requestId);
   }
   return new Response(object.body, {
     headers: {

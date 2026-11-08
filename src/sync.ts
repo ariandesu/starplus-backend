@@ -368,16 +368,17 @@ const CURSOR_WHERE = "((received_at > ?) OR (received_at = ? AND client_id > ?))
 export async function handleSync(request: Request, env: Env, requestId: string, url: URL): Promise<Response> {
   const session = await requireSession(request, env, ["astronaut"]);
   if (!session.ok) return sessionError(session, request, requestId);
-  const cursor = parseCursor(url.searchParams.get("since"));
+  const mCursor = parseCursor(url.searchParams.get("since_measurements") ?? url.searchParams.get("since"));
+  const rCursor = parseCursor(url.searchParams.get("since_results") ?? url.searchParams.get("since"));
   const measurements = await env.DB.prepare(
     `SELECT * FROM measurements WHERE crew_id = ? AND ${CURSOR_WHERE} ORDER BY received_at ASC, client_id ASC LIMIT 500`
   )
-    .bind(session.crew_id, cursor.received_at, cursor.received_at, cursor.client_id)
+    .bind(session.crew_id, mCursor.received_at, mCursor.received_at, mCursor.client_id)
     .all();
   const results = await env.DB.prepare(
     `SELECT * FROM results WHERE crew_id = ? AND ${CURSOR_WHERE} ORDER BY received_at ASC, client_id ASC LIMIT 500`
   )
-    .bind(session.crew_id, cursor.received_at, cursor.received_at, cursor.client_id)
+    .bind(session.crew_id, rCursor.received_at, rCursor.received_at, rCursor.client_id)
     .all();
   const queued = await env.DB.prepare(
     "SELECT client_id, status FROM reports WHERE submitted_by = ? AND status IN ('delivered', 'acknowledged')"
@@ -389,12 +390,18 @@ export async function handleSync(request: Request, env: Env, requestId: string, 
     client_id: (row as Record<string, string>).client_id,
   }));
   const head = last.length > 0 ? last[last.length - 1] : null;
+  const mRows = measurements.results as Array<Record<string, string>>;
+  const rRows = results.results as Array<Record<string, string>>;
+  const mHead = mRows.length > 0 ? mRows[mRows.length - 1] : null;
+  const rHead = rRows.length > 0 ? rRows[rRows.length - 1] : null;
   return json(
     {
       measurements: measurements.results,
       results: results.results,
       reports_status: queued.results,
       cursor: head ? `${head.received_at}|${head.client_id}` : null,
+      measurements_cursor: mHead ? `${mHead.received_at}|${mHead.client_id}` : null,
+      results_cursor: rHead ? `${rHead.received_at}|${rHead.client_id}` : null,
     },
     request,
     requestId

@@ -11,4 +11,6 @@ export interface Env {
   TEST_MIGRATIONS?: unknown[];
   /** Staging only: extra CORS origins (comma-separated). Never set in production. */
   EXTRA_ALLOWED_ORIGINS?: string;
+  /** Set to "on" to enable one-tap demo login. Staging and production only. */
+  DEMO_LOGIN?: string;
 }

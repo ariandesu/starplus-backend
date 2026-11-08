@@ -3,9 +3,11 @@ import {
   handleAdminCrew,
   handleAdminRevoke,
   handleAuth,
+  handleDemoAuth,
 } from "./auth";
 import { handleCrewResults } from "./crew";
 import { handleCrewProgress } from "./progress";
+import { resetDemoData } from "./demo";
 import type { Env } from "./env";
 import { checkAuth, error, json, preflight, readJsonObject, requestStore } from "./http";
 import { handleBatch, handleSync } from "./sync";
@@ -65,11 +67,26 @@ async function handle(request: Request, env: Env): Promise<Response> {
     if (denied) return denied;
     return handleAdminRevoke(request, env, requestId);
   }
+  if (path === "/api/admin/demo-reset") {
+    if (method !== "POST") return error(405, "Method not allowed", request, requestId);
+    const limited = await checkApiLimit(request, env, requestId);
+    if (limited) return limited;
+    const denied = checkAuth(request, env.API_KEY, requestId);
+    if (denied) return denied;
+    const counts = await resetDemoData(env.DB, env.ATTACHMENTS);
+    return json({ reset: counts }, request, requestId);
+  }
   if (path === "/api/auth") {
     if (method !== "POST") return error(405, "Method not allowed", request, requestId);
     const limited = await checkAuthLimit(request, env, requestId);
     if (limited) return limited;
     return handleAuth(request, env, requestId);
+  }
+  if (path === "/api/auth/demo") {
+    if (method !== "POST") return error(405, "Method not allowed", request, requestId);
+    const limited = await checkAuthLimit(request, env, requestId);
+    if (limited) return limited;
+    return handleDemoAuth(request, env, requestId);
   }
 
   // ---- Self-check batch and sync ----
@@ -284,7 +301,13 @@ export default {
   },
 
   // The 72h window slides even when no new readings arrive, so recompute on a schedule.
+  // Once a day at 00:00 UTC, reset demo data so judges' test entries don't pile up.
   async scheduled(_controller, env, ctx) {
     ctx.waitUntil(recomputeAll(env.DB).then((n) => console.log(`Recomputed ${n} WATCH signals`)));
+    if (new Date().getUTCHours() === 0) {
+      ctx.waitUntil(
+        resetDemoData(env.DB, env.ATTACHMENTS).then((counts) => console.log("Demo reset", JSON.stringify(counts)))
+      );
+    }
   },
 } satisfies ExportedHandler<Env>;

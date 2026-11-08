@@ -117,6 +117,18 @@ describe("scoreDays", () => {
     expect(days).toEqual([]);
   });
 
+  it("counts synthetic readings with includeSynthetic for the demo view", () => {
+    const synthetic = measurement("sleep_hours", "2026-11-08T09:00:00Z", { provenance: "synthetic" });
+    const checkIn = {
+      assessed_at: "2026-11-08T11:00:00Z",
+      per_measure: [{ values: { client_id: synthetic.client_id } }],
+    };
+    expect(scoreDays([synthetic], [checkIn])).toEqual([]);
+    const days = scoreDays([synthetic], [checkIn], { includeSynthetic: true });
+    expect(days).toHaveLength(1);
+    expect(days[0]).toMatchObject({ checkIn: true, sleep: true, points: 2 });
+  });
+
   it("accepts sleep_quality and urine_specific_gravity as sleep and hydration", () => {
     const days = scoreDays(
       [

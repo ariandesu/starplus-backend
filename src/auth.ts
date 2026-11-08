@@ -12,7 +12,7 @@ export interface Session {
 }
 
 export type SessionCheck =
-  | { ok: true; crew_id: string; role: string }
+  | { ok: true; crew_id: string; role: string; demo: boolean }
   | { ok: false; status: 401 | 403 };
 
 export async function sha256Hex(value: string): Promise<string> {
@@ -41,15 +41,15 @@ export async function requireSession(
   const match = header.match(/^Bearer\s+(.+)$/i);
   if (!match) return { ok: false, status: 401 };
   const row = await env.DB.prepare(
-    "SELECT crew_id, role, expires_at, revoked FROM sessions WHERE token_hash = ?"
+    "SELECT crew_id, role, expires_at, revoked, demo FROM sessions WHERE token_hash = ?"
   )
     .bind(await sha256Hex(match[1]))
-    .first<{ crew_id: string; role: string; expires_at: string; revoked: number }>();
+    .first<{ crew_id: string; role: string; expires_at: string; revoked: number; demo: number }>();
   if (!row || row.revoked !== 0 || row.expires_at <= new Date().toISOString()) {
     return { ok: false, status: 401 };
   }
   if (!roles.includes(row.role)) return { ok: false, status: 403 };
-  return { ok: true, crew_id: row.crew_id, role: row.role };
+  return { ok: true, crew_id: row.crew_id, role: row.role, demo: row.demo === 1 };
 }
 
 export function sessionError(check: { status: 401 | 403 }, request: Request, requestId: string): Response {
@@ -140,4 +140,42 @@ export async function handleAuth(request: Request, env: Env, requestId: string):
     ).bind(await sha256Hex(token), crew.id, crew.role, device_id, now.toISOString(), expires_at),
   ]);
   return json({ token, crew_id: crew.id, role: crew.role, expires_at, provenance: crew.provenance }, request, requestId);
+}
+
+export const DEMO_CREW: Record<string, { id: string; role: string; name: string }> = {
+  astronaut: { id: "demo-astronaut", role: "astronaut", name: "Demo astronaut" },
+  surgeon: { id: "demo-surgeon", role: "flight_medical_officer", name: "Demo flight surgeon" },
+};
+
+const DEMO_SESSION_TTL_MS = 24 * 3_600_000;
+
+export async function handleDemoAuth(request: Request, env: Env, requestId: string): Promise<Response> {
+  if (env.DEMO_LOGIN !== "on") return error(404, "Not found", request, requestId);
+  const body = await readJsonObject(request);
+  const role = body?.role;
+  const device_id = body?.device_id;
+  if (role !== "astronaut" && role !== "flight_medical_officer") {
+    return error(400, "Invalid role", request, requestId);
+  }
+  if (typeof device_id !== "string" || device_id.length === 0) {
+    return error(400, "Invalid device", request, requestId);
+  }
+  const crew = role === "astronaut" ? DEMO_CREW.astronaut : DEMO_CREW.surgeon;
+  const now = new Date();
+  const expires_at = new Date(now.getTime() + DEMO_SESSION_TTL_MS).toISOString();
+  const token = randomToken();
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO crew (id, name, role, provenance, created_at) VALUES (?, ?, ?, 'synthetic', ?)
+       ON CONFLICT (id) DO NOTHING`
+    ).bind(crew.id, crew.name, crew.role, now.toISOString()),
+    env.DB.prepare(
+      "INSERT INTO sessions (token_hash, crew_id, role, device_id, created_at, expires_at, revoked, demo) VALUES (?, ?, ?, ?, ?, ?, 0, 1)"
+    ).bind(await sha256Hex(token), crew.id, crew.role, device_id, now.toISOString(), expires_at),
+  ]);
+  return json(
+    { token, crew_id: crew.id, role: crew.role, expires_at, provenance: "synthetic", demo: true },
+    request,
+    requestId
+  );
 }

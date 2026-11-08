@@ -3,6 +3,8 @@ import type { Measurement } from "./record.ts";
 export interface GamificationOptions {
   timeZone?: string;
   referenceDate?: string;
+  /** Count synthetic readings as points (demo view only; the real rules exclude them). */
+  includeSynthetic?: boolean;
 }
 
 export interface DayScore {
@@ -53,8 +55,9 @@ export function shiftDay(day: string, offset: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-function eligible(m: Measurement): boolean {
-  return m.provenance === "real" && m.is_estimate === 0 && m.voided === 0;
+function eligibleFor(m: Measurement, includeSynthetic: boolean): boolean {
+  if (m.is_estimate !== 0 || m.voided !== 0) return false;
+  return m.provenance === "real" || (includeSynthetic && m.provenance === "synthetic");
 }
 
 export interface CheckIn {
@@ -68,8 +71,9 @@ export function scoreDays(
   options: GamificationOptions = {}
 ): DayScore[] {
   const timeZone = options.timeZone ?? "UTC";
+  const includeSynthetic = options.includeSynthetic ?? false;
   const byDay = new Map<string, DayScore>();
-  const eligibleIds = new Set(measurements.filter(eligible).map((m) => m.client_id));
+  const eligibleIds = new Set(measurements.filter((m) => eligibleFor(m, includeSynthetic)).map((m) => m.client_id));
   const at = (day: string): DayScore => {
     let score = byDay.get(day);
     if (!score) {
@@ -84,7 +88,7 @@ export function scoreDays(
     if (earned) at(localDay(result.assessed_at, timeZone)).checkIn = true;
   }
   for (const m of measurements) {
-    if (!eligible(m)) continue;
+    if (!eligibleFor(m, includeSynthetic)) continue;
     const score = at(localDay(m.measured_at, timeZone));
     if (EXERCISE_METRICS.has(m.metric)) score.exercise = true;
     if (SLEEP_METRICS.has(m.metric)) score.sleep = true;

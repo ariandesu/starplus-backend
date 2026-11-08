@@ -7,6 +7,14 @@ export async function handleCrewResults(request: Request, env: Env, requestId: s
   if (!session.ok) return sessionError(session, request, requestId);
   const crew_id = url.searchParams.get("crew_id");
   if (!crew_id) return error(400, "crew_id is required", request, requestId);
+  if (session.demo) {
+    const subject = await env.DB.prepare("SELECT provenance FROM crew WHERE id = ?")
+      .bind(crew_id)
+      .first<{ provenance: string }>();
+    if (!subject || subject.provenance !== "synthetic") {
+      return json({ results: [], cursor: null }, request, requestId);
+    }
+  }
   const since = url.searchParams.get("since");
   const pipe = since?.indexOf("|") ?? -1;
   const sinceReceived = pipe === -1 ? (since ?? "") : since!.slice(0, pipe);
