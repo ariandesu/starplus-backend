@@ -39,13 +39,17 @@ function measurement(metric: string, measured_at: string, overrides: Partial<Mea
 
 describe("scoreDays", () => {
   it("awards one point each for check-in, exercise, sleep and hydration", () => {
+    const exercise = measurement("physical_activity", "2026-11-08T08:00:00Z");
+    const sleep = measurement("sleep_hours", "2026-11-08T09:00:00Z");
+    const water = measurement("water_intake", "2026-11-08T10:00:00Z");
     const days = scoreDays(
+      [exercise, sleep, water],
       [
-        measurement("physical_activity", "2026-11-08T08:00:00Z"),
-        measurement("sleep_hours", "2026-11-08T09:00:00Z"),
-        measurement("water_intake", "2026-11-08T10:00:00Z"),
-      ],
-      [{ assessed_at: "2026-11-08T11:00:00Z" }]
+        {
+          assessed_at: "2026-11-08T11:00:00Z",
+          per_measure: [{ values: { client_id: exercise.client_id } }],
+        },
+      ]
     );
     expect(days).toHaveLength(1);
     expect(days[0]).toMatchObject({
@@ -79,9 +83,38 @@ describe("scoreDays", () => {
   });
 
   it("counts a check-in whatever the result status was", () => {
-    const days = scoreDays([], [{ assessed_at: "2026-11-08T11:00:00Z" }], {});
+    const heart = measurement("heart_rate", "2026-11-08T11:00:00Z");
+    const days = scoreDays(
+      [heart],
+      [
+        {
+          assessed_at: "2026-11-08T11:00:00Z",
+          per_measure: [{ values: { client_id: heart.client_id } }],
+        },
+      ],
+      {}
+    );
     expect(days[0].checkIn).toBe(true);
     expect(days[0].points).toBe(1);
+  });
+
+  it("ignores a check-in built only from ineligible readings", () => {
+    const estimate = measurement("heart_rate", "2026-11-08T11:00:00Z", { is_estimate: 1 });
+    const synthetic = measurement("heart_rate", "2026-11-08T11:05:00Z", { provenance: "synthetic" });
+    const days = scoreDays(
+      [estimate, synthetic],
+      [
+        {
+          assessed_at: "2026-11-08T12:00:00Z",
+          per_measure: [
+            { values: { client_id: estimate.client_id } },
+            { values: { client_id: synthetic.client_id } },
+          ],
+        },
+        { assessed_at: "2026-11-08T13:00:00Z", per_measure: [] },
+      ]
+    );
+    expect(days).toEqual([]);
   });
 
   it("accepts sleep_quality and urine_specific_gravity as sleep and hydration", () => {
@@ -96,9 +129,10 @@ describe("scoreDays", () => {
   });
 
   it("buckets days by local time zone", () => {
+    const sleep = measurement("sleep_hours", "2026-11-08T00:30:00Z");
     const days = scoreDays(
-      [measurement("sleep_hours", "2026-11-08T00:30:00Z")],
-      [],
+      [sleep],
+      [{ assessed_at: "2026-11-08T00:30:00Z", per_measure: [{ values: { client_id: sleep.client_id } }] }],
       { timeZone: "America/New_York" }
     );
     expect(days[0].day).toBe("2026-11-07");

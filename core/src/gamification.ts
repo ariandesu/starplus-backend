@@ -57,13 +57,19 @@ function eligible(m: Measurement): boolean {
   return m.provenance === "real" && m.is_estimate === 0 && m.voided === 0;
 }
 
+export interface CheckIn {
+  assessed_at: string;
+  per_measure: Array<{ values: { client_id: string } }>;
+}
+
 export function scoreDays(
   measurements: Measurement[],
-  checkIns: Array<{ assessed_at: string }>,
+  checkIns: CheckIn[],
   options: GamificationOptions = {}
 ): DayScore[] {
   const timeZone = options.timeZone ?? "UTC";
   const byDay = new Map<string, DayScore>();
+  const eligibleIds = new Set(measurements.filter(eligible).map((m) => m.client_id));
   const at = (day: string): DayScore => {
     let score = byDay.get(day);
     if (!score) {
@@ -74,7 +80,8 @@ export function scoreDays(
   };
 
   for (const result of checkIns) {
-    at(localDay(result.assessed_at, timeZone)).checkIn = true;
+    const earned = result.per_measure.some((entry) => eligibleIds.has(entry.values.client_id));
+    if (earned) at(localDay(result.assessed_at, timeZone)).checkIn = true;
   }
   for (const m of measurements) {
     if (!eligible(m)) continue;

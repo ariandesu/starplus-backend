@@ -25,12 +25,16 @@ const assessment = (crew_id: string, daysAgo: number, overall_status: string) =>
   received_at: "",
 });
 
-async function loginAs(crewId: string): Promise<string> {
-  await SELF.fetch("https://example.com/api/admin/crew", {
+async function createCrew(crewId: string, provenance: string): Promise<void> {
+  const res = await SELF.fetch("https://example.com/api/admin/crew", {
     method: "POST",
     headers: adminHeaders(),
-    body: JSON.stringify({ id: crewId, name: crewId, role: "astronaut", provenance: "real" }),
+    body: JSON.stringify({ id: crewId, name: crewId, role: "astronaut", provenance }),
   });
+  expect(res.status).toBe(201);
+}
+
+async function loginAs(crewId: string): Promise<string> {
   const issued = await SELF.fetch("https://example.com/api/admin/codes", {
     method: "POST",
     headers: { ...adminHeaders(), "CF-Connecting-IP": "10.2.0.1" },
@@ -58,21 +62,20 @@ let tokenA = "";
 
 describe("crew progress", () => {
   beforeAll(async () => {
-    tokenA = await loginAs("progress-crew-a");
-    const tokenB = await loginAs("progress-crew-b");
-    await postResults(tokenA, [
-      assessment("progress-crew-a", 0, "nominal"),
-      assessment("progress-crew-a", 2, "nominal"),
-      assessment("progress-crew-a", 4, "nominal"),
-    ]);
-    await postResults(tokenB, [
-      assessment("progress-crew-b", 0, "watch"),
-      assessment("progress-crew-b", 1, "watch"),
-      assessment("progress-crew-b", 2, "watch"),
-      assessment("progress-crew-b", 3, "watch"),
-      assessment("progress-crew-b", 4, "watch"),
-      assessment("progress-crew-b", 5, "watch"),
-      assessment("progress-crew-b", 6, "watch"),
+    await createCrew("progress-crew-daily", "real");
+    await createCrew("progress-crew-synth", "synthetic");
+    await createCrew("progress-crew-watch", "real");
+    tokenA = await loginAs("progress-crew-daily");
+    const tokenSynth = await loginAs("progress-crew-synth");
+    const tokenWatch = await loginAs("progress-crew-watch");
+    await postResults(
+      tokenA,
+      [0, 1, 2, 3, 4, 5, 6, 7].map((daysAgo) => assessment("progress-crew-daily", daysAgo, "nominal"))
+    );
+    await postResults(tokenSynth, [assessment("progress-crew-synth", 0, "nominal")]);
+    await postResults(tokenWatch, [
+      assessment("progress-crew-watch", 1, "nominal"),
+      assessment("progress-crew-watch", 0, "watch"),
     ]);
   });
 
@@ -81,13 +84,21 @@ describe("crew progress", () => {
     expect(res.status).toBe(401);
   });
 
-  it("averages check-in days over 7 days excluding watch and critical crews", async () => {
+  it("caps a daily checker at 100 over the 7-date window", async () => {
     const res = await SELF.fetch("https://example.com/api/crew/progress", {
       headers: { Authorization: `Bearer ${tokenA}` },
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as { window_days: number; readiness_pct: number };
     expect(body.window_days).toBe(7);
-    expect(body.readiness_pct).toBeCloseTo((3 / 7) * 100, 1);
+    expect(body.readiness_pct).toBe(100);
+  });
+
+  it("ignores synthetic crew and crews whose latest result is watch", async () => {
+    const res = await SELF.fetch("https://example.com/api/crew/progress", {
+      headers: { Authorization: `Bearer ${tokenA}` },
+    });
+    const body = (await res.json()) as { readiness_pct: number };
+    expect(body.readiness_pct).toBe(100);
   });
 });

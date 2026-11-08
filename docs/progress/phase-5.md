@@ -3,7 +3,42 @@
 Phase 5 is stretch (items 73–78, 75a). Gate: BLE parser and voice tests green;
 formulary citation check green.
 
-## Item 73 — BLE profiles, parser, simulator (frontend)
+## Y1–Y7 fixes (audit-2026-11-08-phase5, do not merge)
+
+- Y1: crew progress uses a 7-date window (today plus the 6 days before),
+  caps each fraction at 1, counts only real astronauts, and picks the latest
+  result per crew with `ORDER BY assessed_at DESC, client_id DESC LIMIT 1`.
+  Route tests: an 8-day daily checker → 100.0; a synthetic crew ignored; a
+  watch-latest crew excluded.
+- Y2: `decodeSfloat` and FLOAT decode return `null` for the reserved NaN,
+  NRes and ±INF codes; weight `0xFFFF` → `null`; parsers return `null` (or
+  drop the field) for reserved values. Tests use the exact audit bytes.
+- Y3: glucose always returns mg/dL (kg/L × 100,000, mol/L × 18,015.59) and
+  applies the sint16 time offset to the base time. Tests cover both unit
+  flags and the offset with independent bytes.
+- Y4: every parser returns the catalog unit string (notably temperature
+  `°C`); one test asserts each parser's output unit equals
+  `lookupMeasure(metric).unit`.
+- Y5: `extractReadings` finds a metric keyword (heart rate, blood pressure,
+  oxygen, temperature, glucose, weight, breathing rate) with the number
+  after it; "X over Y" yields a systolic/diastolic pair ("one twenty" = 120
+  only in a BP context); the unit comes from the metric. An 11-phrase table
+  test covers the five audit phrases plus five more.
+- Y6: `/check/bluetooth` (profile picker, `requestDevice` + notifications,
+  heart-rate streams downsampled to one value per minute, Simulator button
+  recording `simulated_device`, preview → `validateRecord` → result; the
+  Connect button alone is greyed with the no-Web-Bluetooth reason) and
+  `/check/voice` (mic → transcript → `extractReadings` → editable preview
+  → result; greyed with the no-speech-recognition reason, noting the
+  network need). Both linked from "Other ways", precached, in the offline
+  route test. E2E: simulator saves a BP pair → result; voice mic shown when
+  supported, greyed reason when the API is removed.
+- Y7: core check-ins count only with an eligible `per_measure` record
+  (real, not an estimate, not voided), with a test; the same gamification
+  switch lives on `/progress` and `/settings` via a shared stored value;
+  `/progress` and `/medicines` added to the offline route test.
+
+## Items 73–78, 75a (as built)
 
 - `src/lib/adapters/ble-profiles.ts`: six standard health profiles
   (heart-rate, blood-pressure, thermometer, glucose, pulse-oximeter,
@@ -63,18 +98,21 @@ formulary citation check green.
 
 ## Item 78 — BLE and voice tests (frontend)
 
-- `test/ble.test.ts` (19 tests): six profiles listed; every parser
+- `test/ble.test.ts` (21 tests): six profiles listed; every parser
   round-trips simulator bytes, incl. 16-bit heart rate, kPa→mmHg,
-  °F→°C, lb→kg; truncated input rejected.
-- `test/voice.test.ts` (13 tests): numbers to thousands, decimals,
-  negatives, rejections; unit extraction and fallback.
+  °F→°C, lb→kg; reserved SFLOAT/FLOAT/weight rejected; catalog units;
+  truncated input rejected.
+- `test/voice.test.ts` (28 tests): numbers to thousands, decimals,
+  negatives, rejections; keyword extraction, BP pairs and the 11-phrase table.
 
 ## Counts
 
-- Frontend unit 160/160 (incl. 13 gamification, 19 BLE, 13 voice);
-  backend 104/104 (incl. 13 gamification, 2 progress route).
+- Frontend unit 178/178 (incl. 14 gamification, BLE reserved/unit/glucose
+  and 11-phrase voice coverage); backend 106/106 (incl. 14 gamification,
+  3 progress route).
 - Typecheck clean both repos; lint 0 errors (2 pre-existing demo
-  warnings); citation check ok; `build:staging` clean with /progress and
-  /medicines prerendered.
-- Offline/e2e suites NOT run (no changes to sync, SW routing or forms;
-  the auditor reruns at the gate). NOT merged.
+  warnings); citation check ok; `build:staging` clean with /check/bluetooth,
+  /check/voice, /progress and /medicines prerendered.
+- Offline routes 2/2 Chromium + 2/2 WebKit; import e2e 3/3 both;
+  bluetooth/voice e2e 3/3 both. offline-form/sync skip (need staging codes).
+  CUJ suite NOT run (needs staging codes; the auditor reruns it). NOT merged.

@@ -12,14 +12,21 @@ export async function handleCrewProgress(
   const session = await requireSession(request, env, ["astronaut", "flight_medical_officer"]);
   if (!session.ok) return sessionError(session, request, requestId);
 
-  const now = Date.now();
-  const windowStart = new Date(now - PROGRESS_WINDOW_DAYS * 86_400_000).toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  const windowStart = new Date(Date.parse(`${today}T00:00:00Z`) - (PROGRESS_WINDOW_DAYS - 1) * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
 
   const latest = (await env.DB.prepare(
     `SELECT r.crew_id, r.overall_status FROM results r
-     WHERE r.assessed_at = (
-       SELECT MAX(r2.assessed_at) FROM results r2 WHERE r2.crew_id = r.crew_id
-     )`
+     JOIN crew c ON c.id = r.crew_id
+     WHERE c.provenance = 'real' AND c.role = 'astronaut'
+       AND r.client_id = (
+         SELECT r2.client_id FROM results r2
+         WHERE r2.crew_id = r.crew_id
+         ORDER BY r2.assessed_at DESC, r2.client_id DESC
+         LIMIT 1
+       )`
   ).all<{ crew_id: string; overall_status: string }>()).results;
 
   const fractions: number[] = [];
@@ -27,11 +34,11 @@ export async function handleCrewProgress(
     if (row.overall_status === "watch" || row.overall_status === "critical") continue;
     const active = (await env.DB.prepare(
       `SELECT COUNT(DISTINCT substr(assessed_at, 1, 10)) AS days FROM results
-       WHERE crew_id = ? AND substr(assessed_at, 1, 10) >= ?`
+       WHERE crew_id = ? AND substr(assessed_at, 1, 10) >= ? AND substr(assessed_at, 1, 10) <= ?`
     )
-      .bind(row.crew_id, windowStart)
+      .bind(row.crew_id, windowStart, today)
       .first<{ days: number }>());
-    fractions.push((active?.days ?? 0) / PROGRESS_WINDOW_DAYS);
+    fractions.push(Math.min(active?.days ?? 0, PROGRESS_WINDOW_DAYS) / PROGRESS_WINDOW_DAYS);
   }
 
   const readiness_pct =
