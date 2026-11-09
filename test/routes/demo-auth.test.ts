@@ -236,10 +236,25 @@ describe("demo login", () => {
       headers: { Authorization: `Bearer ${demo.token}` },
     });
     expect(demoAfter.status).toBe(200);
-    const demoSynced = (await demoAfter.json()) as { measurements: Array<{ client_id: string; measured_at: string }> };
+    const demoSynced = (await demoAfter.json()) as {
+      measurements: Array<{ client_id: string; measured_at: string }>;
+      reports_status: Array<{ client_id: string; status: string }>;
+      reports: Array<{ client_id: string; submitted_by: string; kind: string; status: string }>;
+    };
     const demoDays = new Set(demoSynced.measurements.map((item) => item.measured_at.slice(0, 10)));
     expect(demoDays.size).toBe(30);
     expect(demoSynced.measurements.map((item) => item.client_id)).not.toContain(demoItem);
+
+    expect(demoSynced.reports_status.map((item) => item.client_id).sort()).toEqual([
+      "seed-demo-report-emergency",
+      "seed-demo-report-routine",
+    ]);
+    const demoOwnReports = demoSynced.reports;
+    expect(demoOwnReports.map((item) => item.client_id).sort()).toEqual([
+      "seed-demo-report-emergency",
+      "seed-demo-report-routine",
+    ]);
+    expect(demoOwnReports.every((item) => item.submitted_by === "demo-astronaut")).toBe(true);
 
     const reloginFmo = (await (await demoLogin("flight_medical_officer")).json()) as { token: string };
     const demoPhoto = await SELF.fetch(`https://example.com/api/attachments/${DEMO_PHOTO_ID}`, {

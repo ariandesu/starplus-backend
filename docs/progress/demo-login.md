@@ -16,7 +16,7 @@ One-tap demo login with a pre-filled 30-day history (request-2026-11-08-demo-log
   Writes are already fenced (batch ties rows to the session crew; synthetic crews
   may only post synthetic/simulated_device). `GET /api/crew/progress` unchanged.
 - `POST /api/admin/demo-reset` calls `resetAndSeedDemo` (also run by the cron
-  at 00:00 UTC): deletes only demo measurements, results, reports and the
+  at 18:00 UTC, 00:00 in Dhaka): deletes only demo measurements, results, reports and the
   photo, keeps crew rows and sessions, then re-inserts the 30-day history,
   results, 2 reports and photo, all dated relative to today.
 - Seeding lives in the Worker (`src/demo-seed.ts`, pure, unit-tested):
@@ -62,7 +62,7 @@ One-tap demo login with a pre-filled 30-day history (request-2026-11-08-demo-log
   builds the 30-day history (interpolated days, documented steady values, a
   mild watch day 12, one critical systolic day 27, a mild recovery watch day
   28 and a mild watch on the latest day) with per-day `assess()`.
-  `resetAndSeedDemo` (cron at 00:00 UTC + `POST /api/admin/demo-reset`)
+  `resetAndSeedDemo` (cron at 18:00 UTC, 00:00 in Dhaka + `POST /api/admin/demo-reset`)
   deletes only demo measurements, results, reports and the photo, keeps crew
   rows and sessions, then re-inserts history dated relative to today.
   `tools/seed-demo.ts` is a thin wrapper that calls the endpoint.

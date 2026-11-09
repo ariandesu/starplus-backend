@@ -381,7 +381,7 @@ export async function handleSync(request: Request, env: Env, requestId: string, 
     .bind(session.crew_id, rCursor.received_at, rCursor.received_at, rCursor.client_id)
     .all();
   const queued = await env.DB.prepare(
-    "SELECT client_id, status FROM reports WHERE submitted_by = ? AND status IN ('delivered', 'acknowledged')"
+    "SELECT client_id, device_id, submitted_by, subject_crew_id, subject_label, kind, created_at, received_at, payload_json, summary_text, summary_edited, status, acknowledged_by, acknowledged_at FROM reports WHERE submitted_by = ? AND status IN ('delivered', 'acknowledged')"
   )
     .bind(session.crew_id)
     .all();
@@ -398,7 +398,11 @@ export async function handleSync(request: Request, env: Env, requestId: string, 
     {
       measurements: measurements.results,
       results: results.results,
-      reports_status: queued.results,
+      reports_status: queued.results.map((row) => ({
+        client_id: (row as Record<string, string>).client_id,
+        status: (row as Record<string, string>).status,
+      })),
+      reports: queued.results,
       cursor: head ? `${head.received_at}|${head.client_id}` : null,
       measurements_cursor: mHead ? `${mHead.received_at}|${mHead.client_id}` : null,
       results_cursor: rHead ? `${rHead.received_at}|${rHead.client_id}` : null,

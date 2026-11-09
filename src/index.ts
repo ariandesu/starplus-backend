@@ -301,11 +301,11 @@ export default {
   },
 
   // The 72h window slides even when no new readings arrive, so recompute on a schedule.
-  // Once a day at 00:00 UTC, reset and re-seed the demo so judges' test entries
-  // don't pile up and the demo never goes empty.
+  // Once a day at 18:00 UTC (00:00 in Dhaka, UTC+6), reset and re-seed the demo so
+  // judges' test entries don't pile up and the demo never goes empty.
   async scheduled(_controller, env, ctx) {
     ctx.waitUntil(recomputeAll(env.DB).then((n) => console.log(`Recomputed ${n} WATCH signals`)));
-    if (new Date().getUTCHours() === 0) {
+    if (new Date().getUTCHours() === 18) {
       ctx.waitUntil(
         resetAndSeedDemo(env).then((outcome) => console.log("Demo reset and reseed", JSON.stringify(outcome)))
       );
