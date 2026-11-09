@@ -270,4 +270,50 @@ describe("demo login", () => {
     });
     expect(((await demoReports.json()) as { reports: unknown[] }).reports).toHaveLength(4);
   });
+
+  it("stores demo acknowledgements per session", async () => {
+    const reset = await SELF.fetch("https://example.com/api/admin/demo-reset", {
+      method: "POST",
+      headers: adminHeaders(),
+    });
+    expect(reset.status).toBe(200);
+    const sessionA = (await (await demoLogin("flight_medical_officer")).json()) as { token: string };
+    const ack = await SELF.fetch("https://example.com/api/reports/ack", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${sessionA.token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ client_id: "seed-demo-report-emergency" }),
+    });
+    expect(ack.status).toBe(200);
+
+    const seenByA = (await (
+      await SELF.fetch("https://example.com/api/reports", {
+        headers: { Authorization: `Bearer ${sessionA.token}` },
+      })
+    ).json()) as { reports: Array<{ client_id: string; status: string }> };
+    expect(seenByA.reports.find((row) => row.client_id === "seed-demo-report-emergency")?.status).toBe(
+      "acknowledged"
+    );
+    const rosterA = (await (
+      await SELF.fetch("https://example.com/api/crew/roster", {
+        headers: { Authorization: `Bearer ${sessionA.token}` },
+      })
+    ).json()) as { crew: Array<{ crew_id: string; open_reports: number }> };
+    expect(rosterA.crew.find((row) => row.crew_id === "demo-crew-3")?.open_reports).toBe(1);
+
+    const sessionB = (await (await demoLogin("flight_medical_officer")).json()) as { token: string };
+    const seenByB = (await (
+      await SELF.fetch("https://example.com/api/reports", {
+        headers: { Authorization: `Bearer ${sessionB.token}` },
+      })
+    ).json()) as { reports: Array<{ client_id: string; status: string }> };
+    expect(seenByB.reports.find((row) => row.client_id === "seed-demo-report-emergency")?.status).toBe(
+      "delivered"
+    );
+    const rosterB = (await (
+      await SELF.fetch("https://example.com/api/crew/roster", {
+        headers: { Authorization: `Bearer ${sessionB.token}` },
+      })
+    ).json()) as { crew: Array<{ crew_id: string; open_reports: number }> };
+    expect(rosterB.crew.find((row) => row.crew_id === "demo-crew-3")?.open_reports).toBe(2);
+  });
 });

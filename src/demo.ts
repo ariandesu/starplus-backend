@@ -25,6 +25,8 @@ export async function resetDemoData(db: D1Database, attachments?: R2Bucket): Pro
   }
   counts.sessions = 0;
   counts.crew = 0;
+  const acks = await db.prepare("DELETE FROM demo_acks").run();
+  counts.demo_acks = acks.meta.changes ?? 0;
   if (attachments) {
     await attachments.delete(`attachments/${DEMO_PHOTO_ID}`);
     counts.attachments = 1;
@@ -116,8 +118,8 @@ export async function resetAndSeedDemo(env: Env): Promise<Record<string, unknown
       subject_label: "Alex Rivera",
       kind: "routine",
       created_at: stampAt(20),
-      summary: "Demo routine report",
-      payload: { note: "Demo routine report" },
+      summary: "Routine check. Steady numbers, no complaints.",
+      payload: { note: "Routine check. Steady numbers, no complaints." },
       status: "acknowledged",
       acknowledged_by: "demo-surgeon",
       acknowledged_at: stampAt(21),
@@ -129,8 +131,8 @@ export async function resetAndSeedDemo(env: Env): Promise<Record<string, unknown
       subject_label: "Sam Okafor",
       kind: "routine",
       created_at: stampAt(25),
-      summary: "Demo routine report",
-      payload: { note: "Demo routine report" },
+      summary: "Routine check. All steady after exercise.",
+      payload: { note: "Routine check. All steady after exercise." },
       status: "delivered",
       acknowledged_by: null,
       acknowledged_at: null,
@@ -142,8 +144,8 @@ export async function resetAndSeedDemo(env: Env): Promise<Record<string, unknown
       subject_label: "Mia Chen",
       kind: "routine",
       created_at: stampAt(28),
-      summary: "Demo routine report",
-      payload: { note: "Demo routine report" },
+      summary: "Routine check. Slight headache, otherwise fine.",
+      payload: { note: "Routine check. Slight headache, otherwise fine." },
       status: "delivered",
       acknowledged_by: null,
       acknowledged_at: null,
@@ -155,7 +157,7 @@ export async function resetAndSeedDemo(env: Env): Promise<Record<string, unknown
       subject_label: "Mia Chen",
       kind: "emergency",
       created_at: stampAt(29),
-      summary: "Demo emergency report with a photo",
+      summary: "Short of breath during EVA prep. Finger clip reads 88 %. Photo attached.",
       payload: {
         scenario: "low-spo2",
         steps: [],

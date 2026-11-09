@@ -20,14 +20,15 @@ export async function handleCrewProgress(
   const latest = (await env.DB.prepare(
     `SELECT r.crew_id, r.overall_status FROM results r
      JOIN crew c ON c.id = r.crew_id
-     WHERE c.provenance = ? AND c.role = 'astronaut'
+     WHERE c.role = 'astronaut'
+       AND ${session.demo ? "c.provenance = 'synthetic' AND c.id LIKE 'demo-%'" : "c.provenance = 'real'"}
        AND r.client_id = (
          SELECT r2.client_id FROM results r2
          WHERE r2.crew_id = r.crew_id
          ORDER BY r2.assessed_at DESC, r2.client_id DESC
          LIMIT 1
        )`
-  ).bind(session.demo ? "synthetic" : "real").all<{ crew_id: string; overall_status: string }>()).results;
+  ).all<{ crew_id: string; overall_status: string }>()).results;
 
   const fractions: number[] = [];
   for (const row of latest) {

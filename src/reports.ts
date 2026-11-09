@@ -113,7 +113,7 @@ export async function handleGetReports(request: Request, env: Env, requestId: st
   const since = url.searchParams.get("since");
   const order = url.searchParams.get("order") === "desc" ? "DESC" : "ASC";
   const demoOnly = session.demo
-    ? `AND (sc.provenance = 'synthetic' OR jc.provenance = 'synthetic')`
+    ? `AND (sc.id LIKE 'demo-%' OR jc.id LIKE 'demo-%')`
     : "";
   const from = `FROM reports r
     LEFT JOIN crew sc ON sc.id = r.submitted_by
@@ -125,7 +125,23 @@ export async function handleGetReports(request: Request, env: Env, requestId: st
         .bind(since)
         .all()
     : await env.DB.prepare(`SELECT r.* ${from} WHERE 1 = 1 ${demoOnly} ORDER BY r.received_at ${order}, r.client_id ${order} LIMIT 500`).all();
-  return json({ reports: results }, request, requestId);
+  if (!session.demo) return json({ reports: results }, request, requestId);
+  const acked = new Set(
+    (
+      await env.DB.prepare("SELECT report_client_id FROM demo_acks WHERE session_hash = ?")
+        .bind(session.session_hash)
+        .all<{ report_client_id: string }>()
+    ).results.map((row) => row.report_client_id)
+  );
+  return json(
+    {
+      reports: (results as Array<{ client_id: string; status: string }>).map((row) =>
+        acked.has(row.client_id) ? { ...row, status: "acknowledged" } : row
+      ),
+    },
+    request,
+    requestId
+  );
 }
 
 export async function handleAckReport(request: Request, env: Env, requestId: string): Promise<Response> {
@@ -144,11 +160,17 @@ export async function handleAckReport(request: Request, env: Env, requestId: str
       `SELECT r.client_id FROM reports r
        LEFT JOIN crew sc ON sc.id = r.submitted_by
        LEFT JOIN crew jc ON jc.id = r.subject_crew_id
-       WHERE r.client_id = ? AND (sc.provenance = 'synthetic' OR jc.provenance = 'synthetic')`
+       WHERE r.client_id = ? AND (sc.id LIKE 'demo-%' OR jc.id LIKE 'demo-%')`
     )
       .bind(client_id)
       .first();
     if (!target) return error(403, "Forbidden", request, requestId);
+    await env.DB.prepare(
+      "INSERT INTO demo_acks (session_hash, report_client_id, acknowledged_at) VALUES (?, ?, ?) ON CONFLICT (session_hash, report_client_id) DO NOTHING"
+    )
+      .bind(session.session_hash, client_id, new Date().toISOString())
+      .run();
+    return json({ acknowledged: client_id }, request, requestId);
   }
   const now = new Date().toISOString();
   const updated = await env.DB.prepare(
@@ -227,9 +249,9 @@ export async function handleGetAttachment(
   }
   if (session.demo) {
     const owner = submittedBy
-      ? await env.DB.prepare("SELECT provenance FROM crew WHERE id = ?").bind(submittedBy).first<{ provenance: string }>()
+      ? await env.DB.prepare("SELECT 1 AS ok FROM crew WHERE id = ? AND id LIKE 'demo-%'").bind(submittedBy).first<{ ok: number }>()
       : null;
-    if (!owner || owner.provenance !== "synthetic") return error(403, "Forbidden", request, requestId);
+    if (!owner) return error(403, "Forbidden", request, requestId);
   }
   return new Response(object.body, {
     headers: {

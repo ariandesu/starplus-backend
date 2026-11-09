@@ -109,4 +109,28 @@ describe("buildDemoSeed", () => {
     ]);
     expect(new Set(ids).size).toBe(ids.length);
   }, 180_000);
+
+  it("gives each person their own readings with day-to-day variation", async () => {
+    const nowMs = Date.parse("2026-11-09T18:00:00Z");
+    const seeds = await buildCrewSeeds(nowMs, DHAKA, demoStories());
+    const latestVitals = new Map(
+      seeds.map((seed) => {
+        const latest = seed.results[seed.results.length - 1];
+        const vitals = latest.per_measure
+          .map((entry) => `${entry.metric}=${String(entry.values.value)}`)
+          .sort()
+          .join("|");
+        return [seed.crewId, vitals] as const;
+      })
+    );
+    expect(new Set(latestVitals.values()).size).toBe(seeds.length);
+    for (const seed of seeds) {
+      const heartRates = seed.measurements
+        .filter((item) => item.metric === "heart_rate")
+        .map((item) => item.value_num);
+      expect(new Set(heartRates).size).toBeGreaterThan(5);
+    }
+    const again = await buildCrewSeeds(nowMs, DHAKA, demoStories());
+    expect(JSON.stringify(again)).toBe(JSON.stringify(seeds));
+  }, 180_000);
 });

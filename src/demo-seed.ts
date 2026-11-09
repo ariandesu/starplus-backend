@@ -52,33 +52,58 @@ const RADIATION_MSV = 0.5;
 
 /**
  * Fixed, documented adjustments so the demo month reads mostly nominal.
- * The source rows swing hard enough to trip the tight personal-baseline
- * floors every few days, so every measure uses a steady typical value
- * (SYN-A001's first row, rounded) and sleep is lifted to at least 7.2 h.
- * Steady baselines keep ordinary days nominal; the three forced events below
+ * Each person's steady values come from their own first CSV row (rounded),
+ * clamped into the nominal band with margin where the raw row would already
+ * trip a limit; sleep is lifted to at least 7.2 h. A small deterministic
+ * day-to-day variation keeps every series lifelike but stays inside the
+ * personal-baseline band, so ordinary days stay nominal; the scripted events
  * carry the story through limit results, independent of baseline math.
  */
 const MIN_SLEEP_HOURS = 7.2;
-const FLAT_VALUES: Record<string, number> = {
-  blood_pressure_systolic: 128,
-  blood_pressure_diastolic: 72,
-  heart_rate: 66,
-  temperature_c: 37.1,
-  blood_glucose: 92.0,
-  sleep_hours: 7.2,
-  sleep_quality: 65,
-  mood_score: 60,
-  stress_score: 45,
-  hrv_rmssd: 45,
-  physical_activity: 60,
-  oxygen_saturation: 97,
-  respiratory_rate: 11,
-  body_mass: 79,
-  urine_specific_gravity: 1.013,
-  water_intake: 2.0,
-  calories: 2200,
-  reaction_time: 260,
+const STEADY_CLAMPS: Record<string, { min?: number; max?: number }> = {
+  blood_glucose: { min: 72 },
+  urine_specific_gravity: { max: 1.017 },
+  sleep_hours: { min: MIN_SLEEP_HOURS },
 };
+const DEFAULT_VARIATION_AMP = 0.02;
+const VARIATION_AMP: Record<string, number> = {
+  blood_pressure_systolic: 0.01,
+  oxygen_saturation: 0.005,
+  temperature_c: 0.0025,
+  sleep_hours: 0.01,
+  urine_specific_gravity: 0.002,
+};
+
+/** Deterministic [0, 1) hash so two runs with the same now seed identically. */
+export function hash01(input: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  hash ^= hash >>> 13;
+  hash = Math.imul(hash, 0x5bd1e995);
+  hash ^= hash >>> 15;
+  return (hash >>> 0) / 4294967296;
+}
+
+function steadyValues(rows: Array<Record<string, string>>): Record<string, number> {
+  const first = rows[0] ?? {};
+  const out: Record<string, number> = {};
+  for (const [column, metric] of Object.entries(SYNTHETIC_COLUMNS)) {
+    const raw = Number.parseFloat(first[column] ?? "");
+    if (!Number.isFinite(raw)) continue;
+    if (!lookupMeasure(metric)) continue;
+    const clamp = STEADY_CLAMPS[metric];
+    const rounded = Math.round(raw * 100) / 100;
+    out[metric] =
+      clamp?.min !== undefined ? Math.max(rounded, clamp.min)
+      : clamp?.max !== undefined ? Math.min(rounded, clamp.max)
+      : rounded;
+  }
+  for (const extra of EXTRA_DAILY) out[extra.metric] = extra.value;
+  return out;
+}
 
 function uuidFrom(seed: string): string {
   let h1 = 0x811c9dc5;
@@ -160,13 +185,18 @@ function record(
   value: number,
   measuredAt: string,
   source: Measurement["source"],
-  adjust = true
+  adjust = true,
+  vary?: { steady: number; dayKey: string }
 ): Measurement {
   const measure = lookupMeasure(metric)!;
   let adjusted = value;
-  if (adjust) {
-    if (metric === "sleep_hours") adjusted = Math.max(value, MIN_SLEEP_HOURS);
-    if (metric in FLAT_VALUES) adjusted = FLAT_VALUES[metric];
+  if (adjust && vary !== undefined) {
+    const amp = VARIATION_AMP[metric] ?? DEFAULT_VARIATION_AMP;
+    adjusted = vary.steady * (1 + (hash01(`${crewId}:${metric}:${vary.dayKey}`) - 0.5) * 2 * amp);
+    if (metric === "sleep_hours") adjusted = Math.max(adjusted, MIN_SLEEP_HOURS);
+    if (metric === "urine_specific_gravity" && STEADY_CLAMPS[metric]?.max !== undefined) {
+      adjusted = Math.min(adjusted, STEADY_CLAMPS[metric].max as number);
+    }
   }
   return {
     client_id: uuidFrom(`seed-demo:${crewId}:${person}:${dayLabel}:${metric}:${source}`),
@@ -305,6 +335,7 @@ async function buildCrewSeed(nowMs: number, timeZone: string, story: CrewStory):
   const dayCount = story.days;
   if (rows.length === 0) throw new Error(`demo seed for ${crewId} has no rows`);
   const todayKey = tzDateKey(nowMs, timeZone);
+  const steady = steadyValues(rows);
   const measurements: Measurement[] = [];
   for (let day = 0; day < dayCount; day++) {
     const globalDay = day + (30 - dayCount);
@@ -313,28 +344,23 @@ async function buildCrewSeed(nowMs: number, timeZone: string, story: CrewStory):
       day === dayCount - 1
         ? new Date(nowMs).toISOString()
         : new Date(zonedToUtcMs(key, 8, 0, timeZone)).toISOString();
-    const position = dayCount === 1 ? 0 : (day * (rows.length - 1)) / (dayCount - 1);
-    const lower = rows[Math.floor(position)];
-    const upper = rows[Math.ceil(position)];
-    const fraction = position - Math.floor(position);
-    const row: Record<string, string> = {};
-    for (const header of Object.keys(lower)) {
-      const a = Number.parseFloat(lower[header] ?? "");
-      const b = Number.parseFloat(upper[header] ?? "");
-      row[header] = Number.isFinite(a) && Number.isFinite(b) ? String(a + (b - a) * fraction) : (lower[header] ?? "");
-    }
     const label = `day-${String(globalDay).padStart(2, "0")}`;
     const sparse = day < story.sparseFirst;
-    for (const [column, metric] of Object.entries(SYNTHETIC_COLUMNS)) {
+    for (const metric of new Set(Object.values(SYNTHETIC_COLUMNS))) {
       if (sparse && !SPARSE_METRICS.has(metric)) continue;
-      const raw = Number.parseFloat(row[column] ?? "");
-      if (!Number.isFinite(raw)) continue;
       if (!lookupMeasure(metric)) continue;
-      measurements.push(record(crewId, person, label, metric, raw, at, "import"));
+      const base = steady[metric];
+      if (!Number.isFinite(base)) continue;
+      measurements.push(record(crewId, person, label, metric, base, at, "import", true, { steady: base, dayKey: key }));
     }
     if (!sparse) {
       for (const extra of EXTRA_DAILY) {
-        measurements.push(record(crewId, person, label, extra.metric, extra.value, at, extra.source));
+        measurements.push(
+          record(crewId, person, label, extra.metric, extra.value, at, extra.source, true, {
+            steady: extra.value,
+            dayKey: key,
+          })
+        );
       }
     }
     if (RADIATION_DAYS.includes(globalDay)) {
@@ -342,10 +368,9 @@ async function buildCrewSeed(nowMs: number, timeZone: string, story: CrewStory):
     }
     if (!sparse) {
       for (const code of ["sleep_hours", "mood_score", "stress_score", "sleep_quality"]) {
-        const column = Object.keys(SYNTHETIC_COLUMNS).find((c) => SYNTHETIC_COLUMNS[c] === code) ?? "";
-        const value = Number.parseFloat(row[column] ?? "");
-        if (!Number.isFinite(value)) continue;
-        measurements.push(record(crewId, person, label, code, value, at, "questionnaire"));
+        const base = steady[code];
+        if (!Number.isFinite(base)) continue;
+        measurements.push(record(crewId, person, label, code, base, at, "questionnaire", true, { steady: base, dayKey: key }));
       }
     }
     const forcedAt = day === dayCount - 1 ? at : new Date(Date.parse(at) + 60_000).toISOString();

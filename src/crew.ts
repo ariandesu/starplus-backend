@@ -5,19 +5,21 @@ import { requireSession, sessionError } from "./auth.ts";
 const CREW_ROLES = ["flight_medical_officer", "mission_control"];
 
 async function fencedCrewIds(env: Env, demo: boolean): Promise<Array<{ id: string; name: string }>> {
-  const { results } = await env.DB.prepare(
-    "SELECT id, name FROM crew WHERE role = 'astronaut' AND provenance = ? ORDER BY id ASC"
-  )
-    .bind(demo ? "synthetic" : "real")
-    .all<{ id: string; name: string }>();
+  const { results } = demo
+    ? await env.DB.prepare(
+        "SELECT id, name FROM crew WHERE role = 'astronaut' AND id LIKE 'demo-%' ORDER BY id ASC"
+      ).all<{ id: string; name: string }>()
+    : await env.DB.prepare(
+        "SELECT id, name FROM crew WHERE role = 'astronaut' AND provenance = 'real' ORDER BY id ASC"
+      ).all<{ id: string; name: string }>();
   return results;
 }
 
 async function demoSubjectOk(env: Env, crew_id: string): Promise<boolean> {
-  const subject = await env.DB.prepare("SELECT provenance FROM crew WHERE id = ?")
+  const subject = await env.DB.prepare("SELECT 1 AS ok FROM crew WHERE id = ? AND id LIKE 'demo-%'")
     .bind(crew_id)
-    .first<{ provenance: string }>();
-  return !!subject && subject.provenance === "synthetic";
+    .first<{ ok: number }>();
+  return !!subject;
 }
 
 export async function handleCrewResults(request: Request, env: Env, requestId: string, url: URL): Promise<Response> {
@@ -121,11 +123,17 @@ export async function handleCrewRoster(request: Request, env: Env, requestId: st
     )
       .bind(crew.id, cutoff)
       .first<{ days: number }>();
-    const open = await env.DB.prepare(
-      "SELECT COUNT(*) AS n FROM reports WHERE submitted_by = ? AND status = 'delivered'"
-    )
-      .bind(crew.id)
-      .first<{ n: number }>();
+    const open = session.demo
+      ? await env.DB.prepare(
+          `SELECT COUNT(*) AS n FROM reports
+           WHERE submitted_by = ? AND status = 'delivered'
+           AND client_id NOT IN (SELECT report_client_id FROM demo_acks WHERE session_hash = ?)`
+        )
+          .bind(crew.id, session.session_hash)
+          .first<{ n: number }>()
+      : await env.DB.prepare("SELECT COUNT(*) AS n FROM reports WHERE submitted_by = ? AND status = 'delivered'")
+          .bind(crew.id)
+          .first<{ n: number }>();
     let vitals: RosterVital[] = [];
     if (latest) {
       try {

@@ -6,13 +6,8 @@ const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const SESSION_TTL_MS = 30 * 24 * 3_600_000;
 const SHARED_SESSION_TTL_MS = 24 * 3_600_000;
 
-export interface Session {
-  crew_id: string;
-  role: string;
-}
-
 export type SessionCheck =
-  | { ok: true; crew_id: string; role: string; demo: boolean }
+  | { ok: true; crew_id: string; role: string; demo: boolean; session_hash: string }
   | { ok: false; status: 401 | 403 };
 
 export async function sha256Hex(value: string): Promise<string> {
@@ -40,16 +35,17 @@ export async function requireSession(
   const header = request.headers.get("Authorization") ?? "";
   const match = header.match(/^Bearer\s+(.+)$/i);
   if (!match) return { ok: false, status: 401 };
+  const tokenHash = await sha256Hex(match[1]);
   const row = await env.DB.prepare(
     "SELECT crew_id, role, expires_at, revoked, demo FROM sessions WHERE token_hash = ?"
   )
-    .bind(await sha256Hex(match[1]))
+    .bind(tokenHash)
     .first<{ crew_id: string; role: string; expires_at: string; revoked: number; demo: number }>();
   if (!row || row.revoked !== 0 || row.expires_at <= new Date().toISOString()) {
     return { ok: false, status: 401 };
   }
   if (!roles.includes(row.role)) return { ok: false, status: 403 };
-  return { ok: true, crew_id: row.crew_id, role: row.role, demo: row.demo === 1 };
+  return { ok: true, crew_id: row.crew_id, role: row.role, demo: row.demo === 1, session_hash: tokenHash };
 }
 
 export function sessionError(check: { status: 401 | 403 }, request: Request, requestId: string): Response {
