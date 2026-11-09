@@ -58,6 +58,13 @@ async function postResults(token: string, results: unknown[]) {
   expect(res.status).toBe(200);
 }
 
+const demoLogin = (role: string) =>
+  SELF.fetch("https://example.com/api/auth/demo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.2.0.1" },
+    body: JSON.stringify({ role, device_id: "device-progress-demo" }),
+  });
+
 let tokenA = "";
 
 describe("crew progress", () => {
@@ -100,5 +107,19 @@ describe("crew progress", () => {
     });
     const body = (await res.json()) as { readiness_pct: number };
     expect(body.readiness_pct).toBe(100);
+  });
+
+  it("computes demo crew progress over synthetic crew for demo sessions", async () => {
+    const demo = (await (await demoLogin("astronaut")).json()) as { token: string };
+    await postResults(
+      demo.token,
+      [0, 1, 2, 3, 4, 5, 6].map((daysAgo) => assessment("demo-astronaut", daysAgo, "nominal"))
+    );
+    const res = await SELF.fetch("https://example.com/api/crew/progress", {
+      headers: { Authorization: `Bearer ${demo.token}` },
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { readiness_pct: number };
+    expect(body.readiness_pct).toBeGreaterThan(0);
   });
 });

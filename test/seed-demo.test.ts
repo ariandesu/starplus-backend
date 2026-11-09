@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDemoSeed, tzDateKey } from "../src/demo-seed.ts";
+import { buildCrewSeeds, buildDemoSeed, demoStories, tzDateKey } from "../src/demo-seed.ts";
 
 const DHAKA = "Asia/Dhaka";
 
@@ -64,4 +64,49 @@ describe("buildDemoSeed", () => {
       }
     }
   }, 120_000);
+
+  it("seeds four crew members with their stories", async () => {
+    const nowMs = Date.parse("2026-11-09T18:00:00Z");
+    const seeds = await buildCrewSeeds(nowMs, DHAKA, demoStories());
+    expect(seeds.map((seed) => seed.crewId)).toEqual(["demo-astronaut", "demo-crew-2", "demo-crew-3", "demo-crew-4"]);
+    expect(seeds.map((seed) => seed.name)).toEqual(["Alex Rivera", "Sam Okafor", "Mia Chen", "Leo Haas"]);
+    const byId = new Map(seeds.map((seed) => [seed.crewId, seed]));
+    const statuses = (id: string): string[] => byId.get(id)!.results.map((result) => result.overall_status);
+
+    const alex = byId.get("demo-astronaut")!;
+    expect(alex.results).toHaveLength(30);
+    expect(statuses("demo-astronaut")[29]).toBe("watch");
+
+    const sam = statuses("demo-crew-2");
+    expect(sam).toHaveLength(30);
+    expect(sam.filter((status) => status === "watch" || status === "critical")).toHaveLength(0);
+    expect(sam[29]).toBe("nominal");
+
+    const mia = statuses("demo-crew-3");
+    expect(mia).toHaveLength(30);
+    expect(mia[29]).toBe("critical");
+    const miaLatest = byId.get("demo-crew-3")!.results[29];
+    expect(miaLatest.per_measure.find((entry) => entry.metric === "oxygen_saturation")?.status).toBe("critical");
+
+    const leo = statuses("demo-crew-4");
+    expect(leo).toHaveLength(8);
+    expect(leo.slice(0, 3)).toEqual(["insufficient", "insufficient", "insufficient"]);
+    expect(leo[7]).toBe("nominal");
+
+    for (const seed of seeds) {
+      for (const item of seed.measurements) {
+        expect(item.crew_id).toBe(seed.crewId);
+        expect(Date.parse(item.measured_at)).toBeLessThanOrEqual(nowMs);
+      }
+      for (const result of seed.results) {
+        expect(result.crew_id).toBe(seed.crewId);
+        expect(Date.parse(result.assessed_at)).toBeLessThanOrEqual(nowMs);
+      }
+    }
+    const ids = seeds.flatMap((seed) => [
+      ...seed.measurements.map((item) => item.client_id),
+      ...seed.results.map((item) => item.client_id),
+    ]);
+    expect(new Set(ids).size).toBe(ids.length);
+  }, 180_000);
 });

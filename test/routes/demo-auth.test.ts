@@ -225,7 +225,7 @@ describe("demo login", () => {
       seeded: { measurements: number; results: number; reports: number };
     };
     expect(outcome.seeded.measurements).toBeGreaterThan(400);
-    expect(outcome.seeded.results).toBe(30);
+    expect(outcome.seeded.results).toBe(98);
 
     const after = await SELF.fetch("https://example.com/api/sync", {
       headers: { Authorization: `Bearer ${realToken}` },
@@ -251,12 +251,10 @@ describe("demo login", () => {
     expect(demoSynced.measurements.map((item) => item.client_id)).not.toContain(demoItem);
 
     expect(demoSynced.reports_status.map((item) => item.client_id).sort()).toEqual([
-      "seed-demo-report-emergency",
       "seed-demo-report-routine",
     ]);
     const demoOwnReports = demoSynced.reports;
     expect(demoOwnReports.map((item) => item.client_id).sort()).toEqual([
-      "seed-demo-report-emergency",
       "seed-demo-report-routine",
     ]);
     expect(demoOwnReports.every((item) => item.submitted_by === "demo-astronaut")).toBe(true);
@@ -270,6 +268,6 @@ describe("demo login", () => {
     const demoReports = await SELF.fetch("https://example.com/api/reports", {
       headers: { Authorization: `Bearer ${reloginFmo.token}` },
     });
-    expect(((await demoReports.json()) as { reports: unknown[] }).reports).toHaveLength(2);
+    expect(((await demoReports.json()) as { reports: unknown[] }).reports).toHaveLength(4);
   });
 });

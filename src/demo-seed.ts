@@ -9,9 +9,17 @@ const SEED = seedFile as {
   person: string;
   photo_base64: string;
   rows: Array<Record<string, string>>;
+  crew?: Array<{ id: string; name: string; person: string; rows: Array<Record<string, string>> }>;
 };
 
 export const DEMO_PHOTO_BASE64: string = SEED.photo_base64;
+
+export interface DemoCrewEntry {
+  id: string;
+  name: string;
+  person: string;
+  rows: Array<Record<string, string>>;
+}
 
 /** Mirrors ml/maps/synthetic.yaml so the synthetic CSV imports as-is. */
 const SYNTHETIC_COLUMNS: Record<string, string> = {
@@ -145,6 +153,7 @@ export function addDays(dateKey: string, delta: number): string {
 }
 
 function record(
+  crewId: string,
   person: string,
   dayLabel: string,
   metric: string,
@@ -160,8 +169,8 @@ function record(
     if (metric in FLAT_VALUES) adjusted = FLAT_VALUES[metric];
   }
   return {
-    client_id: uuidFrom(`seed-demo:${person}:${dayLabel}:${metric}:${source}`),
-    crew_id: DEMO_CREW_ID,
+    client_id: uuidFrom(`seed-demo:${crewId}:${person}:${dayLabel}:${metric}:${source}`),
+    crew_id: crewId,
     metric,
     value_num: Math.round(adjusted * 100) / 100,
     value_text: null,
@@ -191,13 +200,31 @@ export interface DemoSeed {
   days: string[];
 }
 
-export interface ForcedDay {
+export interface CrewSeed extends DemoSeed {
+  crewId: string;
+  name: string;
+}
+
+export interface CrewEvent {
+  /** Loop day index (days - 1 is the newest day). */
   day: number;
-  heartRate: number;
-  systolic: number;
-  diastolic: number;
+  metric: string;
+  value: number;
   tag: string;
 }
+
+export interface CrewStory {
+  crewId: string;
+  name: string;
+  person: string;
+  rows: Array<Record<string, string>>;
+  days: number;
+  /** First N loop days record vitals only (a thin start reads insufficient). */
+  sparseFirst: number;
+  events: CrewEvent[];
+}
+
+const SPARSE_METRICS = new Set(["heart_rate", "temperature_c"]);
 
 /**
  * Deliberate events: a mild mid-month blood-pressure watch, one critical
@@ -206,26 +233,87 @@ export interface ForcedDay {
  * exactly its intended status; neighbouring days stay nominal because the
  * baselines are steady.
  */
-const FORCED_DAYS: ForcedDay[] = [
-  { day: 12, heartRate: 0, systolic: 142, diastolic: 85, tag: "watch-mid" },
-  { day: 27, heartRate: 0, systolic: 183, diastolic: 0, tag: "critical" },
-  { day: 28, heartRate: 0, systolic: 141, diastolic: 82, tag: "watch-recovery" },
-  { day: 29, heartRate: 112, systolic: 141, diastolic: 0, tag: "watch-latest" },
+const ALEX_EVENTS: CrewEvent[] = [
+  { day: 12, metric: "blood_pressure_systolic", value: 142, tag: "watch-mid" },
+  { day: 12, metric: "blood_pressure_diastolic", value: 85, tag: "watch-mid" },
+  { day: 27, metric: "blood_pressure_systolic", value: 183, tag: "critical" },
+  { day: 28, metric: "blood_pressure_systolic", value: 141, tag: "watch-recovery" },
+  { day: 28, metric: "blood_pressure_diastolic", value: 82, tag: "watch-recovery" },
+  { day: 29, metric: "heart_rate", value: 112, tag: "watch-latest" },
+  { day: 29, metric: "blood_pressure_systolic", value: 141, tag: "watch-latest" },
 ];
 
+export function demoStories(): CrewStory[] {
+  const crew = SEED.crew ?? [];
+  const rowsFor = (id: string): Array<Record<string, string>> =>
+    crew.find((entry) => entry.id === id)?.rows ?? [];
+  return [
+    {
+      crewId: DEMO_CREW_ID,
+      name: "Alex Rivera",
+      person: SEED.person,
+      rows: SEED.rows,
+      days: 30,
+      sparseFirst: 0,
+      events: ALEX_EVENTS,
+    },
+    {
+      crewId: "demo-crew-2",
+      name: "Sam Okafor",
+      person: "SYN-A002",
+      rows: rowsFor("demo-crew-2"),
+      days: 30,
+      sparseFirst: 0,
+      events: [],
+    },
+    {
+      crewId: "demo-crew-3",
+      name: "Mia Chen",
+      person: "SYN-A003",
+      rows: rowsFor("demo-crew-3"),
+      days: 30,
+      sparseFirst: 0,
+      events: [{ day: 29, metric: "oxygen_saturation", value: 88, tag: "critical-spo2" }],
+    },
+    {
+      crewId: "demo-crew-4",
+      name: "Leo Haas",
+      person: "SYN-A004",
+      rows: rowsFor("demo-crew-4"),
+      days: 8,
+      sparseFirst: 3,
+      events: [],
+    },
+  ];
+}
+
 export async function buildDemoSeed(nowMs: number, timeZone = "UTC"): Promise<DemoSeed> {
-  const person = SEED.person;
-  const rows = SEED.rows;
-  if (rows.length === 0) throw new Error("demo seed has no rows");
+  const [alex] = await buildCrewSeeds(nowMs, timeZone, demoStories().slice(0, 1));
+  return { person: alex.person, measurements: alex.measurements, results: alex.results, days: alex.days };
+}
+
+export async function buildCrewSeeds(nowMs: number, timeZone: string, stories: CrewStory[]): Promise<CrewSeed[]> {
+  const seeds: CrewSeed[] = [];
+  for (const story of stories) {
+    seeds.push(await buildCrewSeed(nowMs, timeZone, story));
+  }
+  return seeds;
+}
+
+async function buildCrewSeed(nowMs: number, timeZone: string, story: CrewStory): Promise<CrewSeed> {
+  const { crewId, name, person, rows } = story;
+  const dayCount = story.days;
+  if (rows.length === 0) throw new Error(`demo seed for ${crewId} has no rows`);
   const todayKey = tzDateKey(nowMs, timeZone);
   const measurements: Measurement[] = [];
-  for (let day = 0; day < 30; day++) {
-    const key = addDays(todayKey, day - 29);
+  for (let day = 0; day < dayCount; day++) {
+    const globalDay = day + (30 - dayCount);
+    const key = addDays(todayKey, day - (dayCount - 1));
     const at =
-      day === 29
+      day === dayCount - 1
         ? new Date(nowMs).toISOString()
         : new Date(zonedToUtcMs(key, 8, 0, timeZone)).toISOString();
-    const position = (day * (rows.length - 1)) / 29;
+    const position = dayCount === 1 ? 0 : (day * (rows.length - 1)) / (dayCount - 1);
     const lower = rows[Math.floor(position)];
     const upper = rows[Math.ceil(position)];
     const fraction = position - Math.floor(position);
@@ -235,36 +323,55 @@ export async function buildDemoSeed(nowMs: number, timeZone = "UTC"): Promise<De
       const b = Number.parseFloat(upper[header] ?? "");
       row[header] = Number.isFinite(a) && Number.isFinite(b) ? String(a + (b - a) * fraction) : (lower[header] ?? "");
     }
-    const label = `day-${String(day).padStart(2, "0")}`;
+    const label = `day-${String(globalDay).padStart(2, "0")}`;
+    const sparse = day < story.sparseFirst;
     for (const [column, metric] of Object.entries(SYNTHETIC_COLUMNS)) {
+      if (sparse && !SPARSE_METRICS.has(metric)) continue;
       const raw = Number.parseFloat(row[column] ?? "");
       if (!Number.isFinite(raw)) continue;
       if (!lookupMeasure(metric)) continue;
-      measurements.push(record(person, label, metric, raw, at, "import"));
+      measurements.push(record(crewId, person, label, metric, raw, at, "import"));
     }
-    for (const extra of EXTRA_DAILY) {
-      measurements.push(record(person, label, extra.metric, extra.value, at, extra.source));
-    }
-    if (RADIATION_DAYS.includes(day)) {
-      measurements.push(record(person, label, "radiation_dose", RADIATION_MSV, at, "manual"));
-    }
-    for (const code of ["sleep_hours", "mood_score", "stress_score", "sleep_quality"]) {
-      const column = Object.keys(SYNTHETIC_COLUMNS).find((c) => SYNTHETIC_COLUMNS[c] === code) ?? "";
-      const value = Number.parseFloat(row[column] ?? "");
-      if (!Number.isFinite(value)) continue;
-      measurements.push(record(person, label, code, value, at, "questionnaire"));
-    }
-    const forced = FORCED_DAYS.find((entry) => entry.day === day);
-    if (forced) {
-      const forcedAt = day === 29 ? at : new Date(Date.parse(at) + 60_000).toISOString();
-      if (forced.heartRate > 0) {
-        measurements.push(record(person, label, "heart_rate", forced.heartRate, forcedAt, "manual", false));
+    if (!sparse) {
+      for (const extra of EXTRA_DAILY) {
+        measurements.push(record(crewId, person, label, extra.metric, extra.value, at, extra.source));
       }
-      if (forced.diastolic > 0) {
-        measurements.push({ ...record(person, label, "blood_pressure_systolic", forced.systolic, forcedAt, "manual", false), capture_id: `seed-demo-bp-${forced.tag}` });
-        measurements.push({ ...record(person, label, "blood_pressure_diastolic", forced.diastolic, forcedAt, "manual", false), capture_id: `seed-demo-bp-${forced.tag}` });
-      } else {
-        measurements.push({ ...record(person, label, "blood_pressure_systolic", forced.systolic, forcedAt, "manual", false), capture_id: null });
+    }
+    if (RADIATION_DAYS.includes(globalDay)) {
+      measurements.push(record(crewId, person, label, "radiation_dose", RADIATION_MSV, at, "manual"));
+    }
+    if (!sparse) {
+      for (const code of ["sleep_hours", "mood_score", "stress_score", "sleep_quality"]) {
+        const column = Object.keys(SYNTHETIC_COLUMNS).find((c) => SYNTHETIC_COLUMNS[c] === code) ?? "";
+        const value = Number.parseFloat(row[column] ?? "");
+        if (!Number.isFinite(value)) continue;
+        measurements.push(record(crewId, person, label, code, value, at, "questionnaire"));
+      }
+    }
+    const forcedAt = day === dayCount - 1 ? at : new Date(Date.parse(at) + 60_000).toISOString();
+    for (const event of story.events.filter((entry) => entry.day === day)) {
+      const partner =
+        event.metric === "blood_pressure_systolic"
+          ? story.events.find(
+              (entry) => entry.day === day && entry.tag === event.tag && entry.metric === "blood_pressure_diastolic"
+            )
+          : undefined;
+      if (partner) {
+        measurements.push({
+          ...record(crewId, person, label, event.metric, event.value, forcedAt, "manual", false),
+          capture_id: `seed-demo-bp-${event.tag}`,
+        });
+        measurements.push({
+          ...record(crewId, person, label, partner.metric, partner.value, forcedAt, "manual", false),
+          capture_id: `seed-demo-bp-${event.tag}`,
+        });
+      } else if (event.metric !== "blood_pressure_diastolic" || !story.events.some(
+        (entry) => entry.day === day && entry.tag === event.tag && entry.metric === "blood_pressure_systolic"
+      )) {
+        measurements.push({
+          ...record(crewId, person, label, event.metric, event.value, forcedAt, "manual", false),
+          capture_id: null,
+        });
       }
     }
     if (day === 0) {
@@ -293,9 +400,9 @@ export async function buildDemoSeed(nowMs: number, timeZone = "UTC"): Promise<De
     const assessed = await assess(history, { now: stampMs, phase: "inflight", model: null });
     results.push({
       ...assessed,
-      client_id: uuidFrom(`seed-demo:${person}:result:${day}`),
+      client_id: uuidFrom(`seed-demo:${crewId}:${person}:result:${day}`),
       assessed_at: new Date(stampMs).toISOString(),
     });
   }
-  return { person, measurements, results, days };
+  return { crewId, name, person, measurements, results, days };
 }

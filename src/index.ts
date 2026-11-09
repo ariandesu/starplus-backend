@@ -5,7 +5,7 @@ import {
   handleAuth,
   handleDemoAuth,
 } from "./auth";
-import { handleCrewResults } from "./crew";
+import { handleCrewMeasurements, handleCrewResults, handleCrewRoster } from "./crew";
 import { handleCrewProgress } from "./progress";
 import { resetAndSeedDemo } from "./demo";
 import type { Env } from "./env";
@@ -131,6 +131,18 @@ async function handle(request: Request, env: Env): Promise<Response> {
   }
 
   // ---- Flight surgeon ----
+  if (path === "/api/crew/roster") {
+    if (method !== "GET") return error(405, "Method not allowed", request, requestId);
+    const limited = await checkApiLimit(request, env, requestId);
+    if (limited) return limited;
+    return handleCrewRoster(request, env, requestId);
+  }
+  if (path === "/api/crew/measurements") {
+    if (method !== "GET") return error(405, "Method not allowed", request, requestId);
+    const limited = await checkApiLimit(request, env, requestId);
+    if (limited) return limited;
+    return handleCrewMeasurements(request, env, requestId, url);
+  }
   if (path === "/api/crew/results") {
     if (method !== "GET") return error(405, "Method not allowed", request, requestId);
     const limited = await checkApiLimit(request, env, requestId);
