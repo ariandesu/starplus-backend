@@ -1,6 +1,8 @@
 import { SELF, env } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
 import { DEMO_PHOTO_ID } from "../../src/demo.ts";
+import { tzDateKey } from "../../src/demo-seed.ts";
+import type { Env } from "../../src/env.ts";
 
 let sequence = 700;
 const uuid = () => `cccccccc-dddd-4eee-8000-${String(sequence++).padStart(12, "0")}`;
@@ -241,7 +243,10 @@ describe("demo login", () => {
       reports_status: Array<{ client_id: string; status: string }>;
       reports: Array<{ client_id: string; submitted_by: string; kind: string; status: string }>;
     };
-    const demoDays = new Set(demoSynced.measurements.map((item) => item.measured_at.slice(0, 10)));
+    const demoTimeZone = (env as unknown as Env).DEMO_TZ ?? "UTC";
+    const demoDays = new Set(
+      demoSynced.measurements.map((item) => tzDateKey(Date.parse(item.measured_at), demoTimeZone))
+    );
     expect(demoDays.size).toBe(30);
     expect(demoSynced.measurements.map((item) => item.client_id)).not.toContain(demoItem);
 

@@ -96,10 +96,52 @@ function uuidFrom(seed: string): string {
 
 const DAY_MS = 86_400_000;
 
-function dayStartUtc(nowMs: number, daysAgo: number): Date {
-  const midnight = new Date(nowMs);
-  midnight.setUTCHours(0, 0, 0, 0);
-  return new Date(midnight.getTime() - daysAgo * DAY_MS);
+/** "Demo today": the calendar date in the demo timezone at reset time. */
+export function tzDateKey(utcMs: number, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(utcMs));
+  const get = (type: string): string => parts.find((part) => part.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+function tzOffsetMinutes(timeZone: string, utcMs: number): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(new Date(utcMs));
+  const get = (type: string): string => parts.find((part) => part.type === type)?.value ?? "";
+  const asUtc = Date.UTC(
+    Number(get("year")),
+    Number(get("month")) - 1,
+    Number(get("day")),
+    Number(get("hour")) % 24,
+    Number(get("minute")),
+    Number(get("second"))
+  );
+  return Math.round((asUtc - utcMs) / 60_000);
+}
+
+/** Wall-clock time on a calendar date in the demo timezone, as a UTC instant. */
+export function zonedToUtcMs(dateKey: string, hour: number, minute: number, timeZone: string): number {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const wallAsUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
+  const once = wallAsUtc - tzOffsetMinutes(timeZone, wallAsUtc) * 60_000;
+  return wallAsUtc - tzOffsetMinutes(timeZone, once) * 60_000;
+}
+
+export function addDays(dateKey: string, delta: number): string {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day) + delta * DAY_MS).toISOString().slice(0, 10);
 }
 
 function record(
@@ -171,12 +213,18 @@ const FORCED_DAYS: ForcedDay[] = [
   { day: 29, heartRate: 112, systolic: 141, diastolic: 0, tag: "watch-latest" },
 ];
 
-export async function buildDemoSeed(nowMs: number): Promise<DemoSeed> {
+export async function buildDemoSeed(nowMs: number, timeZone = "UTC"): Promise<DemoSeed> {
   const person = SEED.person;
   const rows = SEED.rows;
   if (rows.length === 0) throw new Error("demo seed has no rows");
+  const todayKey = tzDateKey(nowMs, timeZone);
   const measurements: Measurement[] = [];
   for (let day = 0; day < 30; day++) {
+    const key = addDays(todayKey, day - 29);
+    const at =
+      day === 29
+        ? new Date(nowMs).toISOString()
+        : new Date(zonedToUtcMs(key, 8, 0, timeZone)).toISOString();
     const position = (day * (rows.length - 1)) / 29;
     const lower = rows[Math.floor(position)];
     const upper = rows[Math.ceil(position)];
@@ -187,7 +235,6 @@ export async function buildDemoSeed(nowMs: number): Promise<DemoSeed> {
       const b = Number.parseFloat(upper[header] ?? "");
       row[header] = Number.isFinite(a) && Number.isFinite(b) ? String(a + (b - a) * fraction) : (lower[header] ?? "");
     }
-    const at = new Date(dayStartUtc(nowMs, 29 - day).getTime() + 12 * 3_600_000).toISOString();
     const label = `day-${String(day).padStart(2, "0")}`;
     for (const [column, metric] of Object.entries(SYNTHETIC_COLUMNS)) {
       const raw = Number.parseFloat(row[column] ?? "");
@@ -209,7 +256,7 @@ export async function buildDemoSeed(nowMs: number): Promise<DemoSeed> {
     }
     const forced = FORCED_DAYS.find((entry) => entry.day === day);
     if (forced) {
-      const forcedAt = new Date(Date.parse(at) + 60_000).toISOString();
+      const forcedAt = day === 29 ? at : new Date(Date.parse(at) + 60_000).toISOString();
       if (forced.heartRate > 0) {
         measurements.push(record(person, label, "heart_rate", forced.heartRate, forcedAt, "manual", false));
       }
@@ -234,7 +281,7 @@ export async function buildDemoSeed(nowMs: number): Promise<DemoSeed> {
   const history: Measurement[] = [];
   const byDay = new Map<string, Measurement[]>();
   for (const item of measurements) {
-    const day = item.measured_at.slice(0, 10);
+    const day = tzDateKey(Date.parse(item.measured_at), timeZone);
     const group = byDay.get(day) ?? [];
     group.push(item);
     byDay.set(day, group);
@@ -242,12 +289,12 @@ export async function buildDemoSeed(nowMs: number): Promise<DemoSeed> {
   for (const day of [...byDay.keys()].sort()) {
     days.push(day);
     history.push(...byDay.get(day)!);
-    const dayEnd = Date.parse(`${day}T12:00:00.000Z`);
-    const assessed = await assess(history, { now: dayEnd, phase: "inflight", model: null });
+    const stampMs = day === todayKey ? nowMs : zonedToUtcMs(day, 12, 0, timeZone);
+    const assessed = await assess(history, { now: stampMs, phase: "inflight", model: null });
     results.push({
       ...assessed,
       client_id: uuidFrom(`seed-demo:${person}:result:${day}`),
-      assessed_at: `${day}T12:00:00.000Z`,
+      assessed_at: new Date(stampMs).toISOString(),
     });
   }
   return { person, measurements, results, days };

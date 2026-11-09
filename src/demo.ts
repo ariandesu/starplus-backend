@@ -1,5 +1,5 @@
 import type { Env } from "./env.ts";
-import { DEMO_CREW_ID, DEMO_PHOTO_BASE64, buildDemoSeed } from "./demo-seed.ts";
+import { DEMO_CREW_ID, DEMO_PHOTO_BASE64, buildDemoSeed, tzDateKey } from "./demo-seed.ts";
 
 /** Fixed R2 key suffix for the seeded demo emergency photo (stable across resets). */
 export const DEMO_PHOTO_ID = "dddddddd-dddd-4ddd-8000-000000000001";
@@ -40,7 +40,8 @@ function base64ToBytes(base64: string): Uint8Array {
 export async function resetAndSeedDemo(env: Env): Promise<Record<string, unknown>> {
   const reset = await resetDemoData(env.DB, env.ATTACHMENTS);
   const now = Date.now();
-  const seed = await buildDemoSeed(now);
+  const timeZone = env.DEMO_TZ ?? "UTC";
+  const seed = await buildDemoSeed(now, timeZone);
   const counts: Record<string, number> = { ...reset };
   await env.DB.batch([
     env.DB.prepare(
@@ -52,7 +53,7 @@ export async function resetAndSeedDemo(env: Env): Promise<Record<string, unknown
   ]);
   const byDay = new Map<string, typeof seed.measurements>();
   for (const item of seed.measurements) {
-    const day = item.measured_at.slice(0, 10);
+    const day = tzDateKey(Date.parse(item.measured_at), timeZone);
     const group = byDay.get(day) ?? [];
     group.push(item);
     byDay.set(day, group);
