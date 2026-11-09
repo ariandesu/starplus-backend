@@ -68,11 +68,30 @@ const STEADY_CLAMPS: Record<string, { min?: number; max?: number }> = {
 const DEFAULT_VARIATION_AMP = 0.02;
 const VARIATION_AMP: Record<string, number> = {
   blood_pressure_systolic: 0.01,
+  blood_pressure_diastolic: 0.04,
+  heart_rate: 0.05,
   oxygen_saturation: 0.005,
   temperature_c: 0.0025,
   sleep_hours: 0.01,
   urine_specific_gravity: 0.002,
+  body_mass: 0.04,
 };
+
+/** Display precision per measure: whole readings except temperature (1 dp). */
+const INTEGER_METRICS = new Set([
+  "blood_pressure_systolic",
+  "blood_pressure_diastolic",
+  "heart_rate",
+  "oxygen_saturation",
+  "respiratory_rate",
+  "blood_glucose",
+]);
+
+export function roundForDisplay(metric: string, value: number): number {
+  if (INTEGER_METRICS.has(metric)) return Math.round(value);
+  if (metric === "temperature_c") return Math.round(value * 10) / 10;
+  return Math.round(value * 100) / 100;
+}
 
 /** Deterministic [0, 1) hash so two runs with the same now seed identically. */
 export function hash01(input: string): number {
@@ -202,7 +221,7 @@ function record(
     client_id: uuidFrom(`seed-demo:${crewId}:${person}:${dayLabel}:${metric}:${source}`),
     crew_id: crewId,
     metric,
-    value_num: Math.round(adjusted * 100) / 100,
+    value_num: roundForDisplay(metric, adjusted),
     value_text: null,
     unit: measure.unit,
     measured_at: measuredAt,

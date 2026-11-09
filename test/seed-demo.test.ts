@@ -128,9 +128,36 @@ describe("buildDemoSeed", () => {
       const heartRates = seed.measurements
         .filter((item) => item.metric === "heart_rate")
         .map((item) => item.value_num);
-      expect(new Set(heartRates).size).toBeGreaterThan(5);
+      const masses = seed.measurements
+        .filter((item) => item.metric === "body_mass")
+        .map((item) => item.value_num);
+      if (seed.results.length > 10) {
+        // Long series vary day to day instead of flatlining.
+        expect(new Set(heartRates).size).toBeGreaterThan(5);
+        expect(new Set(masses).size).toBeGreaterThan(5);
+      } else {
+        // Leo joined days ago: an 8-point series still moves every few days.
+        expect(new Set(heartRates).size).toBeGreaterThan(1);
+        expect(new Set(masses).size).toBeGreaterThanOrEqual(5);
+      }
     }
     const again = await buildCrewSeeds(nowMs, DHAKA, demoStories());
     expect(JSON.stringify(again)).toBe(JSON.stringify(seeds));
   }, 180_000);
+
+  it("rounds seeded readings to display precision", async () => {
+    const seed = await buildDemoSeed(Date.parse("2026-11-09T18:00:00Z"), DHAKA);
+    for (const item of seed.measurements) {
+      if (item.value_num === null) continue;
+      const value: number = item.value_num;
+      if (
+        ["blood_pressure_systolic", "blood_pressure_diastolic", "heart_rate", "oxygen_saturation", "respiratory_rate", "blood_glucose"].includes(item.metric)
+      ) {
+        expect(Number.isInteger(value), item.metric).toBe(true);
+      }
+      if (item.metric === "temperature_c") {
+        expect(Math.round(value * 10) / 10, item.metric).toBe(value);
+      }
+    }
+  });
 });
