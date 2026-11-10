@@ -17,4 +17,16 @@ export interface Env {
   DEMO_TZ?: string;
   /** Demo-login rate limiter (120/min). Required in production and staging. */
   RATE_LIMIT_DEMO?: RateLimit;
+  /** Better Auth signing secret (`wrangler secret put BETTER_AUTH_SECRET`). Never in git. */
+  BETTER_AUTH_SECRET?: string;
+  /** Public base URL of this Worker, used by Better Auth for origin checks. */
+  BETTER_AUTH_URL?: string;
+  /** Shared demo password (`wrangler secret put DEMO_PASSWORD`). Public by design, never in git. */
+  DEMO_PASSWORD?: string;
+  /** Set to "off" to disable Better Auth's in-memory limiter (tests). */
+  RATE_LIMIT_MODE?: string;
+  /** PBKDF2-SHA256 iteration count override (measured on staging; default in password.ts). */
+  PBKDF2_ITERATIONS?: string;
+  /** Sign-in attempts per minute per address (default 30; raised for load tests only). */
+  SIGNIN_RATE_MAX?: string;
 }

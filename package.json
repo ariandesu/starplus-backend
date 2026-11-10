@@ -27,5 +27,10 @@
     "typescript-eslint": "^8.0.0",
     "vitest": "^3.2.7",
     "wrangler": "^4.158.0"
+  },
+  "dependencies": {
+    "better-auth": "^1.7.18",
+    "kysely": "^0.29.8",
+    "kysely-d1": "^0.4.0"
   }
 }

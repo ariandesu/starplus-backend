@@ -17,6 +17,7 @@ bucket_name = "starplus-attachments"
 ENVIRONMENT = "production"
 DEMO_LOGIN = "on"
 DEMO_TZ = "Asia/Dhaka"
+BETTER_AUTH_URL = "https://starplus-backend.shareflow.workers.dev"
 
 [[ratelimits]]
 name = "RATE_LIMIT_AUTH"
@@ -38,7 +39,7 @@ simple = { limit = 60, period = 60 }
 crons = ["0 */6 * * *"]
 
 [env.staging]
-vars = { ENVIRONMENT = "staging", EXTRA_ALLOWED_ORIGINS = "http://localhost:3100", DEMO_LOGIN = "on", DEMO_TZ = "Asia/Dhaka" }
+vars = { ENVIRONMENT = "staging", EXTRA_ALLOWED_ORIGINS = "http://localhost:3100", DEMO_LOGIN = "on", DEMO_TZ = "Asia/Dhaka", BETTER_AUTH_URL = "https://starplus-backend-staging.shareflow.workers.dev" }
 [env.staging.triggers]
 crons = []
 [[env.staging.d1_databases]]

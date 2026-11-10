@@ -1,5 +1,6 @@
 import { SELF, env } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
+import { signInCrew } from "./helpers";
 
 let sequence = 100;
 const uuid = () => `aaaaaaaa-bbbb-4ccc-8ddd-${String(sequence++).padStart(12, "0")}`;
@@ -62,18 +63,7 @@ describe("batch sync", () => {
       headers: adminHeaders(),
       body: JSON.stringify({ id: "batch-crew", name: "Batch", role: "astronaut", provenance: "real" }),
     });
-    const issued = await SELF.fetch("https://example.com/api/admin/codes", {
-      method: "POST",
-      headers: { ...adminHeaders(), "CF-Connecting-IP": "10.1.0.2" },
-      body: JSON.stringify({ crew_id: "batch-crew" }),
-    });
-    const { code } = (await issued.json()) as { code: string };
-    const authed = await SELF.fetch("https://example.com/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.1.0.2" },
-      body: JSON.stringify({ code, device_id: "device-1" }),
-    });
-    token = ((await authed.json()) as { token: string }).token;
+    token = await signInCrew("batch-crew", "10.1.0.2");
     expect(token.length).toBeGreaterThan(0);
   });
 
@@ -131,18 +121,7 @@ describe("batch sync", () => {
       headers: adminHeaders(),
       body: JSON.stringify({ id: "synth-crew", name: "Synth", role: "astronaut", provenance: "synthetic" }),
     });
-    const issued = await SELF.fetch("https://example.com/api/admin/codes", {
-      method: "POST",
-      headers: { ...adminHeaders(), "CF-Connecting-IP": "10.1.0.4" },
-      body: JSON.stringify({ crew_id: "synth-crew" }),
-    });
-    const { code } = (await issued.json()) as { code: string };
-    const authed = await SELF.fetch("https://example.com/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.1.0.4" },
-      body: JSON.stringify({ code, device_id: "device-s" }),
-    });
-    const synthToken = ((await authed.json()) as { token: string }).token;
+    const synthToken = await signInCrew("synth-crew", "10.1.0.4");
     const send = (items: unknown[]) =>
       SELF.fetch("https://example.com/api/measurements/batch", {
         method: "POST",
@@ -166,18 +145,7 @@ describe("batch sync", () => {
       headers: adminHeaders(),
       body: JSON.stringify({ id: "batch-crew-2", name: "Batch 2", role: "astronaut", provenance: "real" }),
     });
-    const issued = await SELF.fetch("https://example.com/api/admin/codes", {
-      method: "POST",
-      headers: { ...adminHeaders(), "CF-Connecting-IP": "10.1.0.5" },
-      body: JSON.stringify({ crew_id: "batch-crew-2" }),
-    });
-    const { code } = (await issued.json()) as { code: string };
-    const authed = await SELF.fetch("https://example.com/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.1.0.5" },
-      body: JSON.stringify({ code, device_id: "device-2" }),
-    });
-    const otherToken = ((await authed.json()) as { token: string }).token;
+    const otherToken = await signInCrew("batch-crew-2", "10.1.0.5");
     const sendAsOther = (items: unknown[]) =>
       SELF.fetch("https://example.com/api/measurements/batch", {
         method: "POST",

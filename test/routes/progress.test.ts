@@ -1,5 +1,6 @@
 import { SELF, env } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
+import { signInCrew, signInDemoForRole } from "./helpers";
 
 let sequence = 500;
 const uuid = () => `bbbbbbbb-cccc-4ddd-8eee-${String(sequence++).padStart(12, "0")}`;
@@ -34,20 +35,7 @@ async function createCrew(crewId: string, provenance: string): Promise<void> {
   expect(res.status).toBe(201);
 }
 
-async function loginAs(crewId: string): Promise<string> {
-  const issued = await SELF.fetch("https://example.com/api/admin/codes", {
-    method: "POST",
-    headers: { ...adminHeaders(), "CF-Connecting-IP": "10.2.0.1" },
-    body: JSON.stringify({ crew_id: crewId }),
-  });
-  const { code } = (await issued.json()) as { code: string };
-  const authed = await SELF.fetch("https://example.com/api/auth", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.2.0.1" },
-    body: JSON.stringify({ code, device_id: "device-progress" }),
-  });
-  return ((await authed.json()) as { token: string }).token;
-}
+const loginAs = (crewId: string): Promise<string> => signInCrew(crewId);
 
 async function postResults(token: string, results: unknown[]) {
   const res = await SELF.fetch("https://example.com/api/measurements/batch", {
@@ -58,12 +46,7 @@ async function postResults(token: string, results: unknown[]) {
   expect(res.status).toBe(200);
 }
 
-const demoLogin = (role: string) =>
-  SELF.fetch("https://example.com/api/auth/demo", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.2.0.1" },
-    body: JSON.stringify({ role, device_id: "device-progress-demo" }),
-  });
+const demoLogin = (role: string) => signInDemoForRole(role).then((token) => Response.json({ token }));
 
 let tokenA = "";
 

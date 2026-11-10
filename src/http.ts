@@ -29,14 +29,17 @@ export function allowedOrigin(request: Request, extraOrigins?: string): string |
 export function corsHeaders(request: Request, requestId: string): Record<string, string> {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Shared-Device",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
     "X-Request-Id": requestId,
-    "Access-Control-Expose-Headers": "X-Request-Id, Retry-After",
+    "Access-Control-Expose-Headers": "X-Request-Id, Retry-After, set-auth-token",
   };
   const origin = allowedOrigin(request);
-  if (origin) headers["Access-Control-Allow-Origin"] = origin;
+  if (origin) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Credentials"] = "true";
+  }
   return headers;
 }
 

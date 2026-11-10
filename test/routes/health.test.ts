@@ -14,7 +14,7 @@ describe("GET /api/health", () => {
       "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
     ).all<{ name: string }>();
     const names = results.map((row) => row.name);
-    for (const table of ["crew", "measurements", "results", "reports", "access_codes", "sessions"]) {
+    for (const table of ["crew", "measurements", "results", "reports", "access_codes", "user", "session", "account", "verification"]) {
       expect(names).toContain(table);
     }
   });

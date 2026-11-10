@@ -1,8 +1,45 @@
+import { DEMO_ACCOUNTS, createOrUpdateUser } from "./better-auth.ts";
 import type { Env } from "./env.ts";
 import { DEMO_CREW_ID, DEMO_PHOTO_BASE64, addDays, buildCrewSeeds, demoStories, tzDateKey, zonedToUtcMs } from "./demo-seed.ts";
 
 /** Fixed R2 key suffix for the seeded demo emergency photo (stable across resets). */
 export const DEMO_PHOTO_ID = "dddddddd-dddd-4ddd-8000-000000000001";
+
+/**
+ * Creates the three shared demo logins and their crew rows. Idempotent: an
+ * existing account is left alone unless `refresh` is set (the nightly reset
+ * re-applies the current password). Passwords come from the `DEMO_PASSWORD`
+ * Worker secret, never from git.
+ */
+export async function ensureDemoUsers(env: Env, refresh = false): Promise<void> {
+  if (!env.DEMO_PASSWORD) {
+    console.error("DEMO_PASSWORD is not configured; demo accounts are unavailable");
+    return;
+  }
+  const now = new Date().toISOString();
+  for (const account of Object.values(DEMO_ACCOUNTS)) {
+    const existing = await env.DB.prepare('SELECT id FROM "user" WHERE username = ?')
+      .bind(account.username)
+      .first<{ id: string }>();
+    if (existing && !refresh) continue;
+    await env.DB.prepare(
+      `INSERT INTO crew (id, name, role, provenance, created_at) VALUES (?, ?, ?, 'synthetic', ?)
+       ON CONFLICT (id) DO UPDATE SET name = excluded.name, role = excluded.role`
+    )
+      .bind(account.crew_id, account.name, account.role, now)
+      .run();
+    await createOrUpdateUser(env, {
+      email: `${account.username}@demo.starplus.local`,
+      password: env.DEMO_PASSWORD,
+      name: account.name,
+      username: account.username,
+      crew_id: account.crew_id,
+      role: account.role,
+      provenance: "synthetic",
+      demo: true,
+    });
+  }
+}
 
 /**
  * Deletes a demo crew member's measurements, results, reports and photo, but
@@ -23,7 +60,6 @@ export async function resetDemoData(db: D1Database, attachments?: R2Bucket): Pro
       .run();
     counts[table] = deleted.meta.changes ?? 0;
   }
-  counts.sessions = 0;
   counts.crew = 0;
   const acks = await db.prepare("DELETE FROM demo_acks").run();
   counts.demo_acks = acks.meta.changes ?? 0;
@@ -40,6 +76,7 @@ function base64ToBytes(base64: string): Uint8Array {
 }
 
 export async function resetAndSeedDemo(env: Env): Promise<Record<string, unknown>> {
+  await ensureDemoUsers(env, true);
   const reset = await resetDemoData(env.DB, env.ATTACHMENTS);
   const now = Date.now();
   const timeZone = env.DEMO_TZ ?? "UTC";
@@ -66,6 +103,9 @@ export async function resetAndSeedDemo(env: Env): Promise<Record<string, unknown
     ).bind(new Date(now).toISOString()),
     env.DB.prepare(
       `INSERT INTO crew (id, name, role, provenance, created_at) VALUES ('demo-crew-4', 'Leo Haas', 'astronaut', 'synthetic', ?) ON CONFLICT (id) DO UPDATE SET name = excluded.name`
+    ).bind(new Date(now).toISOString()),
+    env.DB.prepare(
+      `INSERT INTO crew (id, name, role, provenance, created_at) VALUES ('demo-mission', 'Demo mission control', 'mission_control', 'synthetic', ?) ON CONFLICT (id) DO UPDATE SET name = excluded.name`
     ).bind(new Date(now).toISOString()),
   ]);
   let measurements = 0;

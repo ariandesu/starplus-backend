@@ -1,5 +1,6 @@
 import { SELF, env } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
+import { signInCrew } from "./helpers";
 
 const adminHeaders = () => ({ Authorization: `Bearer ${env.API_KEY}`, "Content-Type": "application/json", "CF-Connecting-IP": "10.1.0.3" });
 let astroToken = "";
@@ -13,20 +14,7 @@ const post = (path: string, body: unknown, token: string) =>
     body: JSON.stringify(body),
   });
 
-async function loginAs(crew_id: string, device: string): Promise<string> {
-  const issued = await SELF.fetch("https://example.com/api/admin/codes", {
-    method: "POST",
-    headers: adminHeaders(),
-    body: JSON.stringify({ crew_id }),
-  });
-  const { code } = (await issued.json()) as { code: string };
-  const authed = await SELF.fetch("https://example.com/api/auth", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.1.0.3" },
-    body: JSON.stringify({ code, device_id: device }),
-  });
-  return ((await authed.json()) as { token: string }).token;
-}
+const loginAs = (crewId: string): Promise<string> => signInCrew(crewId);
 
 describe("reports", () => {
   beforeAll(async () => {
@@ -37,8 +25,8 @@ describe("reports", () => {
         body: JSON.stringify({ id, name: id, role, provenance: "real" }),
       });
     }
-    astroToken = await loginAs("rep-astro", "device-r");
-    surgeonToken = await loginAs("rep-surgeon", "device-s");
+    astroToken = await loginAs("rep-astro");
+    surgeonToken = await loginAs("rep-surgeon");
   });
 
   it("posts, lists and acknowledges a report", async () => {
@@ -83,7 +71,7 @@ describe("reports", () => {
   });
 
   it("gates reads and acks by role", async () => {
-    const mcToken = await loginAs("rep-mc", "device-m");
+    const mcToken = await loginAs("rep-mc");
     const mcReads = await SELF.fetch("https://example.com/api/reports", {
       headers: { Authorization: `Bearer ${mcToken}` },
     });
@@ -110,7 +98,7 @@ describe("reports ordering", () => {
       headers: adminHeaders(),
       body: JSON.stringify({ id: "rep-order", name: "rep-order", role: "flight_medical_officer", provenance: "real" }),
     });
-    orderToken = await loginAs("rep-order", "device-o");
+    orderToken = await loginAs("rep-order");
     const rows: unknown[][] = [];
     for (let i = 0; i < 501; i++) {
       const at = new Date(base + i * 1000).toISOString();

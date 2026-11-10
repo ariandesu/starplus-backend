@@ -1,5 +1,6 @@
 import { SELF, env } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
+import { signInCrew, signInDemoForRole } from "./helpers";
 
 const adminHeaders = () => ({ Authorization: `Bearer ${env.API_KEY}`, "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.1" });
 let sequence = 100;
@@ -19,27 +20,9 @@ async function createCrew(id: string, role: string, provenance: string): Promise
   expect(res.status).toBe(201);
 }
 
-async function loginAs(crewId: string): Promise<string> {
-  const issued = await SELF.fetch("https://example.com/api/admin/codes", {
-    method: "POST",
-    headers: adminHeaders(),
-    body: JSON.stringify({ crew_id: crewId }),
-  });
-  const { code } = (await issued.json()) as { code: string };
-  const authed = await SELF.fetch("https://example.com/api/auth", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.1" },
-    body: JSON.stringify({ code, device_id: "device-fence" }),
-  });
-  return ((await authed.json()) as { token: string }).token;
-}
+const loginAs = (crewId: string): Promise<string> => signInCrew(crewId);
 
-const demoLogin = (role: string) =>
-  SELF.fetch("https://example.com/api/auth/demo", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.1" },
-    body: JSON.stringify({ role, device_id: "device-fence-demo" }),
-  });
+const demoLogin = (role: string) => signInDemoForRole(role).then((token) => Response.json({ token }));
 
 const assessment = (crew_id: string, daysAgo: number, overall_status: string) => ({
   client_id: uuid(),

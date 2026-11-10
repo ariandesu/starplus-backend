@@ -1,5 +1,6 @@
 import { SELF, env } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
+import { signInCrew } from "./helpers";
 
 let sequence = 900;
 const uuid = () => `dddddddd-eeee-4fff-8000-${String(sequence++).padStart(12, "0")}`;
@@ -21,20 +22,7 @@ async function createCrew(crewId: string, role: string): Promise<void> {
   expect(res.status).toBe(201);
 }
 
-async function loginAs(crewId: string): Promise<string> {
-  const issued = await SELF.fetch("https://example.com/api/admin/codes", {
-    method: "POST",
-    headers: { ...adminHeaders(), "CF-Connecting-IP": "10.3.0.1" },
-    body: JSON.stringify({ crew_id: crewId }),
-  });
-  const { code } = (await issued.json()) as { code: string };
-  const authed = await SELF.fetch("https://example.com/api/auth", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.3.0.1" },
-    body: JSON.stringify({ code, device_id: "device-attachments" }),
-  });
-  return ((await authed.json()) as { token: string }).token;
-}
+const loginAs = (crewId: string): Promise<string> => signInCrew(crewId);
 
 const upload = (token: string | null, body: unknown) =>
   SELF.fetch("https://example.com/api/attachments", {

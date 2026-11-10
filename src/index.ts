@@ -2,14 +2,14 @@ import {
   handleAdminCodes,
   handleAdminCrew,
   handleAdminRevoke,
-  handleAuth,
-  handleDemoAuth,
+  handleRedeemCode,
 } from "./auth";
+import { DEMO_USERNAMES, getAuth } from "./better-auth";
 import { handleCrewMeasurements, handleCrewResults, handleCrewRoster } from "./crew";
 import { handleCrewProgress } from "./progress";
-import { resetAndSeedDemo } from "./demo";
+import { ensureDemoUsers, resetAndSeedDemo } from "./demo";
 import type { Env } from "./env";
-import { checkAuth, error, json, preflight, readJsonObject, requestStore } from "./http";
+import { checkAuth, corsHeaders, error, json, preflight, readJsonObject, requestStore } from "./http";
 import { handleBatch, handleSync } from "./sync";
 import { handleAckReport, handleGetAttachment, handleGetReports, handlePostAttachment, handlePostReport } from "./reports";
 import { checkApiLimit, checkAuthLimit, checkDemoLimit } from "./ratelimit";
@@ -76,17 +76,39 @@ async function handle(request: Request, env: Env): Promise<Response> {
     const outcome = await resetAndSeedDemo(env);
     return json(outcome, request, requestId);
   }
-  if (path === "/api/auth") {
+  if (path === "/api/auth/redeem-code") {
     if (method !== "POST") return error(405, "Method not allowed", request, requestId);
     const limited = await checkAuthLimit(request, env, requestId);
     if (limited) return limited;
-    return handleAuth(request, env, requestId);
+    return handleRedeemCode(request, env, requestId);
   }
-  if (path === "/api/auth/demo") {
-    if (method !== "POST") return error(405, "Method not allowed", request, requestId);
-    const limited = await checkDemoLimit(request, env, requestId);
-    if (limited) return limited;
-    return handleDemoAuth(request, env, requestId);
+
+  // ---- Better Auth (username + bearer plugins) ----
+  if (path === "/api/auth" || path.startsWith("/api/auth/")) {
+    let authRequest = request;
+    if (path === "/api/auth/sign-in/username") {
+      const limited = await checkDemoLimit(request, env, requestId);
+      if (limited) return limited;
+      const raw = await request.text();
+      let username = "";
+      try {
+        const parsed = JSON.parse(raw) as { username?: unknown };
+        username = typeof parsed.username === "string" ? parsed.username.toLowerCase() : "";
+      } catch {
+        username = "";
+      }
+      if (DEMO_USERNAMES.has(username)) {
+        if (env.DEMO_LOGIN !== "on") return error(404, "Not found", request, requestId);
+        await ensureDemoUsers(env);
+      }
+      const headers = new Headers(request.headers);
+      headers.delete("content-length");
+      authRequest = new Request(request.url, { method: request.method, headers, body: raw });
+    }
+    const response = await getAuth(env).handler(authRequest);
+    const headers = new Headers(response.headers);
+    for (const [key, value] of Object.entries(corsHeaders(request, requestId))) headers.set(key, value);
+    return new Response(response.body, { status: response.status, headers });
   }
 
   // ---- Self-check batch and sync ----

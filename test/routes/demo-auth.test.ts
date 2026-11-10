@@ -1,35 +1,15 @@
 import { SELF, env } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
 import { DEMO_PHOTO_ID } from "../../src/demo.ts";
+import { DEMO_TTL_MS } from "../../src/better-auth.ts";
 import { tzDateKey } from "../../src/demo-seed.ts";
 import type { Env } from "../../src/env.ts";
+import { DEMO_PASSWORD, resetDemo, signInCrew, signInDemo, signInDemoForRole } from "./helpers";
 
 let sequence = 700;
 const uuid = () => `cccccccc-dddd-4eee-8000-${String(sequence++).padStart(12, "0")}`;
-const adminHeaders = () => ({ Authorization: `Bearer ${env.API_KEY}`, "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.1" });
-const PNG_1PX = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
-const demoLogin = (role: string) =>
-  SELF.fetch("https://example.com/api/auth/demo", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.1" },
-    body: JSON.stringify({ role, device_id: "device-demo" }),
-  });
-
-async function loginAs(crewId: string): Promise<string> {
-  const issued = await SELF.fetch("https://example.com/api/admin/codes", {
-    method: "POST",
-    headers: { ...adminHeaders(), "CF-Connecting-IP": "10.5.0.1" },
-    body: JSON.stringify({ crew_id: crewId }),
-  });
-  const { code } = (await issued.json()) as { code: string };
-  const authed = await SELF.fetch("https://example.com/api/auth", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.1" },
-    body: JSON.stringify({ code, device_id: "device-demo" }),
-  });
-  return ((await authed.json()) as { token: string }).token;
-}
+const authHeaders = (token: string) => ({ Authorization: `Bearer ${token}`, "Content-Type": "application/json" });
 
 const measurement = (crew_id: string, client_id: string) => ({
   client_id,
@@ -70,52 +50,185 @@ const assessment = (crew_id: string, client_id: string) => ({
   received_at: "",
 });
 
-describe("demo login", () => {
+const batch = (token: string, items: unknown[], results: unknown[]) =>
+  SELF.fetch("https://example.com/api/measurements/batch", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ schema_version: 1, catalog_version: "1", items, results }),
+  });
+
+describe("demo accounts", () => {
   beforeAll(async () => {
     await SELF.fetch("https://example.com/api/admin/crew", {
       method: "POST",
-      headers: adminHeaders(),
+      headers: { Authorization: `Bearer ${env.API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({ id: "real-astro", name: "Real", role: "astronaut", provenance: "real" }),
     });
     await SELF.fetch("https://example.com/api/admin/crew", {
       method: "POST",
-      headers: adminHeaders(),
+      headers: { Authorization: `Bearer ${env.API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({ id: "real-fmo", name: "Real FMO", role: "flight_medical_officer", provenance: "real" }),
     });
   });
 
-  it("signs in each role with a 24 h demo session", async () => {
-    for (const [role, crew_id] of [["astronaut", "demo-astronaut"], ["flight_medical_officer", "demo-surgeon"]] as const) {
-      const before = Date.now();
-      const res = await demoLogin(role);
+  it("signs all three demo cards in with a 7-day session", async () => {
+    for (const [account, crew_id, role] of [
+      ["astronaut01", "demo-astronaut", "astronaut"],
+      ["fmo01", "demo-surgeon", "flight_medical_officer"],
+      ["mc01", "demo-mission", "mission_control"],
+    ] as const) {
+      const res = await SELF.fetch("https://example.com/api/auth/sign-in/username", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.1" },
+        body: JSON.stringify({ username: account, password: DEMO_PASSWORD }),
+      });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as Record<string, unknown>;
-      expect(body).toMatchObject({ crew_id: crew_id, role, provenance: "synthetic", demo: true });
-      const ttl = Date.parse(body.expires_at as string) - before;
-      expect(ttl).toBeGreaterThan(23 * 3_600_000);
-      expect(ttl).toBeLessThanOrEqual(24 * 3_600_000 + 5000);
+      const body = (await res.json()) as { user: Record<string, unknown> };
+      expect(body.user).toMatchObject({ crew_id, role, demo: true, provenance: "synthetic" });
+      const token = res.headers.get("set-auth-token")!;
+      const session = await env.DB.prepare('SELECT expiresAt FROM "session" WHERE token = ?')
+        .bind(decodeURIComponent(token.split(".")[0]))
+        .first<{ expiresAt: string }>();
+      // Token is signed; fall back to the newest session row for the account.
+      const row =
+        session ??
+        (await env.DB.prepare(
+          `SELECT s.expiresAt FROM "session" s JOIN "user" u ON u.id = s.userId
+           WHERE u.username = ? ORDER BY s.createdAt DESC LIMIT 1`
+        )
+          .bind(account)
+          .first<{ expiresAt: string }>());
+      const ttl = Date.parse(row!.expiresAt) - Date.now();
+      expect(ttl).toBeGreaterThan(DEMO_TTL_MS - 120_000);
+      expect(ttl).toBeLessThan(DEMO_TTL_MS + 120_000);
     }
   });
 
-  it("lets 30 demo logins from one IP through within a minute", async () => {
-    for (let i = 0; i < 30; i++) {
-      const res = await SELF.fetch("https://example.com/api/auth/demo", {
+  it("gives mission control the surgeon dashboard data", async () => {
+    const token = await signInDemo("mc01");
+    const roster = await SELF.fetch("https://example.com/api/crew/roster", {
+      headers: authHeaders(token),
+    });
+    expect(roster.status).toBe(200);
+    const body = (await roster.json()) as { crew: Array<{ crew_id: string }> };
+    expect(body.crew.every((row) => row.crew_id.startsWith("demo-"))).toBe(true);
+  });
+
+  it("fences all three demo accounts to demo crew", async () => {
+    for (const token of [await signInDemo("fmo01"), await signInDemo("mc01")]) {
+      const results = await SELF.fetch("https://example.com/api/crew/results?crew_id=real-astro", {
+        headers: authHeaders(token),
+      });
+      expect(((await results.json()) as { results: unknown[] }).results).toHaveLength(0);
+      const measurements = await SELF.fetch("https://example.com/api/crew/measurements?crew_id=real-astro", {
+        headers: authHeaders(token),
+      });
+      expect(((await measurements.json()) as { measurements: unknown[] }).measurements).toHaveLength(0);
+    }
+    const astro = await signInDemo("astronaut01");
+    const astroResults = await SELF.fetch("https://example.com/api/crew/results?crew_id=real-astro", {
+      headers: authHeaders(astro),
+    });
+    expect(astroResults.status).toBe(403);
+    await astroResults.text();
+    const roster = await SELF.fetch("https://example.com/api/crew/roster", { headers: authHeaders(astro) });
+    expect(roster.status).toBe(403);
+    await roster.text();
+  });
+
+  it("allows demo users only sign-in, get-session and sign-out — cookie and bearer", async () => {
+    const attempts: Array<[string, string, unknown]> = [
+      ["POST", "/api/auth/change-password", { currentPassword: DEMO_PASSWORD, newPassword: "hijacked-123" }],
+      ["POST", "/api/auth/change-email", { newEmail: "hijacked@example.com" }],
+      ["POST", "/api/auth/update-user", { name: "Hijacked", username: "hijacked01" }],
+      ["POST", "/api/auth/delete-user", {}],
+      ["POST", "/api/auth/revoke-sessions", {}],
+      ["POST", "/api/auth/revoke-other-sessions", {}],
+      ["POST", "/api/auth/revoke-session", {}],
+      ["GET", "/api/auth/list-sessions", undefined],
+    ];
+    for (const transport of ["cookie", "bearer"] as const) {
+      const res = await SELF.fetch("https://example.com/api/auth/sign-in/username", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.9" },
-        body: JSON.stringify({ role: i % 2 === 0 ? "astronaut" : "flight_medical_officer", device_id: `device-burst-${i}` }),
+        headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.3" },
+        body: JSON.stringify({ username: "astronaut01", password: DEMO_PASSWORD }),
       });
       expect(res.status).toBe(200);
-      await res.json();
+      const token = res.headers.get("set-auth-token");
+      const setCookies = res.headers.getSetCookie?.() ?? [];
+      const cookie = setCookies.map((value) => value.split(";")[0]).join("; ");
+      await res.text();
+      expect(token).toBeTruthy();
+      const headers: Record<string, string> =
+        transport === "cookie"
+          ? { Cookie: cookie, Origin: "http://localhost:3100" }
+          : { Authorization: `Bearer ${token}` };
+
+      const mine = await SELF.fetch("https://example.com/api/auth/get-session", { headers });
+      expect(mine.status, transport).toBe(200);
+      const body = (await mine.json()) as { user: { username: string; role: string } };
+      expect(body.user).toMatchObject({ username: "astronaut01", role: "astronaut" });
+
+      for (const [method, path, payload] of attempts) {
+        const blocked = await SELF.fetch(`https://example.com${path}`, {
+          method,
+          headers: { ...headers, "Content-Type": "application/json" },
+          ...(payload === undefined ? {} : { body: JSON.stringify(payload) }),
+        });
+        expect(blocked.status, `${transport} ${path}`).toBe(403);
+        await blocked.text();
+      }
+
+      const out = await SELF.fetch("https://example.com/api/auth/sign-out", {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: "{}",
+      });
+      expect(out.status, transport).toBe(200);
+      await out.text();
     }
+
+    // The published demo password still works after all of that.
+    const stillWorks = await signInDemo("astronaut01");
+    const sync = await SELF.fetch("https://example.com/api/sync", { headers: authHeaders(stillWorks) });
+    expect(sync.status).toBe(200);
+    await sync.text();
+  });
+
+  it("turns email sign-in off for demo and real accounts", async () => {
+    const res = await SELF.fetch("https://example.com/api/auth/sign-in/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.4" },
+      body: JSON.stringify({ email: "fmo01@demo.starplus.local", password: DEMO_PASSWORD }),
+    });
+    expect(res.status).toBe(404);
+    await res.text();
+    const real = await SELF.fetch("https://example.com/api/auth/sign-in/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.5.0.4" },
+      body: JSON.stringify({ email: "someone@example.com", password: "test-password-123" }),
+    });
+    expect(real.status).toBe(404);
+    await real.text();
+  });
+
+  it("stores demo passwords as PBKDF2 hashes", async () => {
+    await signInDemo("astronaut01");
+    const row = await env.DB.prepare(
+      `SELECT a.password FROM "account" a JOIN "user" u ON u.id = a.userId WHERE u.username = ?`
+    )
+      .bind("astronaut01")
+      .first<{ password: string }>();
+    expect(row?.password).toMatch(/^pbkdf2\$sha256\$\d+\$[A-Za-z0-9_-]+\$[A-Za-z0-9_-]+$/);
   });
 
   it("fences demo reads and acks to synthetic data", async () => {
-    const realToken = await loginAs("real-astro");
-    const fmoToken = await loginAs("real-fmo");
+    const realToken = await signInCrew("real-astro");
+    const fmoToken = await signInCrew("real-fmo");
     const reportId = uuid();
     const posted = await SELF.fetch("https://example.com/api/reports", {
       method: "POST",
-      headers: { Authorization: `Bearer ${realToken}`, "Content-Type": "application/json" },
+      headers: authHeaders(realToken),
       body: JSON.stringify({
         client_id: reportId,
         device_id: "device-demo",
@@ -125,100 +238,46 @@ describe("demo login", () => {
       }),
     });
     expect(posted.status).toBe(201);
-    const batched = await SELF.fetch("https://example.com/api/measurements/batch", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${realToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        schema_version: 1,
-        catalog_version: "1",
-        items: [measurement("real-astro", uuid())],
-        results: [assessment("real-astro", uuid())],
-      }),
-    });
+    const batched = await batch(realToken, [measurement("real-astro", uuid())], [assessment("real-astro", uuid())]);
     expect(batched.status).toBe(200);
-    const photoId = uuid();
-    const stored = await SELF.fetch("https://example.com/api/attachments", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${realToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ id: photoId, report_client_id: reportId, content_type: "image/png", data_base64: PNG_1PX }),
-    });
-    expect(stored.status).toBe(201);
-    await stored.text();
 
-    const demo = (await (await demoLogin("flight_medical_officer")).json()) as { token: string };
-    const demoReports = await SELF.fetch("https://example.com/api/reports", {
-      headers: { Authorization: `Bearer ${demo.token}` },
-    });
+    const demoToken = await signInDemo("fmo01");
+    const demoReports = await SELF.fetch("https://example.com/api/reports", { headers: authHeaders(demoToken) });
     expect(demoReports.status).toBe(200);
     expect(((await demoReports.json()) as { reports: unknown[] }).reports).toHaveLength(0);
 
-    const demoResults = await SELF.fetch(`https://example.com/api/crew/results?crew_id=real-astro`, {
-      headers: { Authorization: `Bearer ${demo.token}` },
+    const demoResults = await SELF.fetch("https://example.com/api/crew/results?crew_id=real-astro", {
+      headers: authHeaders(demoToken),
     });
-    expect(demoResults.status).toBe(200);
     expect(((await demoResults.json()) as { results: unknown[] }).results).toHaveLength(0);
-
-    const demoPhoto = await SELF.fetch(`https://example.com/api/attachments/${photoId}`, {
-      headers: { Authorization: `Bearer ${demo.token}` },
-    });
-    expect(demoPhoto.status).toBe(403);
-    await demoPhoto.text();
 
     const demoAck = await SELF.fetch("https://example.com/api/reports/ack", {
       method: "POST",
-      headers: { Authorization: `Bearer ${demo.token}`, "Content-Type": "application/json" },
+      headers: authHeaders(demoToken),
       body: JSON.stringify({ client_id: reportId }),
     });
     expect(demoAck.status).toBe(403);
 
-    const fmoReports = await SELF.fetch("https://example.com/api/reports", {
-      headers: { Authorization: `Bearer ${fmoToken}` },
-    });
+    const fmoReports = await SELF.fetch("https://example.com/api/reports", { headers: authHeaders(fmoToken) });
     expect(((await fmoReports.json()) as { reports: unknown[] }).reports.length).toBeGreaterThan(0);
-    const fmoPhoto = await SELF.fetch(`https://example.com/api/attachments/${photoId}`, {
-      headers: { Authorization: `Bearer ${fmoToken}` },
-    });
-    expect(fmoPhoto.status).toBe(200);
-    await fmoPhoto.arrayBuffer();
-    const fmoResults = await SELF.fetch(`https://example.com/api/crew/results?crew_id=real-astro`, {
-      headers: { Authorization: `Bearer ${fmoToken}` },
+    const fmoResults = await SELF.fetch("https://example.com/api/crew/results?crew_id=real-astro", {
+      headers: authHeaders(fmoToken),
     });
     expect(((await fmoResults.json()) as { results: unknown[] }).results.length).toBeGreaterThan(0);
   });
 
-  it("demo reset keeps sessions and crew, reseeds 30 days, spares real rows", async () => {
-    const realToken = await loginAs("real-astro");
+  it("demo reset keeps accounts and sessions, reseeds 30 days, spares real rows", async () => {
+    const realToken = await signInCrew("real-astro");
     const realItem = uuid();
-    const seeded = await SELF.fetch("https://example.com/api/measurements/batch", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${realToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        schema_version: 1,
-        catalog_version: "1",
-        items: [measurement("real-astro", realItem)],
-        results: [],
-      }),
-    });
+    const seeded = await batch(realToken, [measurement("real-astro", realItem)], []);
     expect(seeded.status).toBe(200);
 
-    const demo = (await (await demoLogin("astronaut")).json()) as { token: string };
+    const demoToken = await signInDemo("astronaut01");
     const demoItem = uuid();
-    const demoSeeded = await SELF.fetch("https://example.com/api/measurements/batch", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${demo.token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        schema_version: 1,
-        catalog_version: "1",
-        items: [{ ...measurement("demo-astronaut", demoItem), provenance: "synthetic" }],
-        results: [],
-      }),
-    });
+    const demoSeeded = await batch(demoToken, [{ ...measurement("demo-astronaut", demoItem), provenance: "synthetic" }], []);
     expect(demoSeeded.status).toBe(200);
 
-    const reset = await SELF.fetch("https://example.com/api/admin/demo-reset", {
-      method: "POST",
-      headers: adminHeaders(),
-    });
+    const reset = await resetDemo();
     expect(reset.status).toBe(200);
     const outcome = (await reset.json()) as {
       reset: Record<string, number>;
@@ -227,16 +286,12 @@ describe("demo login", () => {
     expect(outcome.seeded.measurements).toBeGreaterThan(400);
     expect(outcome.seeded.results).toBe(98);
 
-    const after = await SELF.fetch("https://example.com/api/sync", {
-      headers: { Authorization: `Bearer ${realToken}` },
-    });
+    const after = await SELF.fetch("https://example.com/api/sync", { headers: authHeaders(realToken) });
     const synced = (await after.json()) as { measurements: Array<{ client_id: string }> };
     expect(synced.measurements.map((item) => item.client_id)).toContain(realItem);
     expect(synced.measurements.map((item) => item.client_id)).not.toContain(demoItem);
 
-    const demoAfter = await SELF.fetch("https://example.com/api/sync", {
-      headers: { Authorization: `Bearer ${demo.token}` },
-    });
+    const demoAfter = await SELF.fetch("https://example.com/api/sync", { headers: authHeaders(demoToken) });
     expect(demoAfter.status).toBe(200);
     const demoSynced = (await demoAfter.json()) as {
       measurements: Array<{ client_id: string; measured_at: string }>;
@@ -249,70 +304,46 @@ describe("demo login", () => {
     );
     expect(demoDays.size).toBe(30);
     expect(demoSynced.measurements.map((item) => item.client_id)).not.toContain(demoItem);
+    expect(demoSynced.reports_status.map((item) => item.client_id).sort()).toEqual(["seed-demo-report-routine"]);
+    expect(demoSynced.reports.every((item) => item.submitted_by === "demo-astronaut")).toBe(true);
 
-    expect(demoSynced.reports_status.map((item) => item.client_id).sort()).toEqual([
-      "seed-demo-report-routine",
-    ]);
-    const demoOwnReports = demoSynced.reports;
-    expect(demoOwnReports.map((item) => item.client_id).sort()).toEqual([
-      "seed-demo-report-routine",
-    ]);
-    expect(demoOwnReports.every((item) => item.submitted_by === "demo-astronaut")).toBe(true);
-
-    const reloginFmo = (await (await demoLogin("flight_medical_officer")).json()) as { token: string };
+    const reloginFmo = await signInDemo("fmo01");
     const demoPhoto = await SELF.fetch(`https://example.com/api/attachments/${DEMO_PHOTO_ID}`, {
-      headers: { Authorization: `Bearer ${reloginFmo.token}` },
+      headers: authHeaders(reloginFmo),
     });
     expect(demoPhoto.status).toBe(200);
     await demoPhoto.arrayBuffer();
-    const demoReports = await SELF.fetch("https://example.com/api/reports", {
-      headers: { Authorization: `Bearer ${reloginFmo.token}` },
-    });
+    const demoReports = await SELF.fetch("https://example.com/api/reports", { headers: authHeaders(reloginFmo) });
     expect(((await demoReports.json()) as { reports: unknown[] }).reports).toHaveLength(4);
   });
 
   it("stores demo acknowledgements per session", async () => {
-    const reset = await SELF.fetch("https://example.com/api/admin/demo-reset", {
-      method: "POST",
-      headers: adminHeaders(),
-    });
+    const reset = await resetDemo();
     expect(reset.status).toBe(200);
-    const sessionA = (await (await demoLogin("flight_medical_officer")).json()) as { token: string };
+    const sessionA = await signInDemoForRole("flight_medical_officer");
     const ack = await SELF.fetch("https://example.com/api/reports/ack", {
       method: "POST",
-      headers: { Authorization: `Bearer ${sessionA.token}`, "Content-Type": "application/json" },
+      headers: authHeaders(sessionA),
       body: JSON.stringify({ client_id: "seed-demo-report-emergency" }),
     });
     expect(ack.status).toBe(200);
 
     const seenByA = (await (
-      await SELF.fetch("https://example.com/api/reports", {
-        headers: { Authorization: `Bearer ${sessionA.token}` },
-      })
+      await SELF.fetch("https://example.com/api/reports", { headers: authHeaders(sessionA) })
     ).json()) as { reports: Array<{ client_id: string; status: string }> };
-    expect(seenByA.reports.find((row) => row.client_id === "seed-demo-report-emergency")?.status).toBe(
-      "acknowledged"
-    );
+    expect(seenByA.reports.find((row) => row.client_id === "seed-demo-report-emergency")?.status).toBe("acknowledged");
     const rosterA = (await (
-      await SELF.fetch("https://example.com/api/crew/roster", {
-        headers: { Authorization: `Bearer ${sessionA.token}` },
-      })
+      await SELF.fetch("https://example.com/api/crew/roster", { headers: authHeaders(sessionA) })
     ).json()) as { crew: Array<{ crew_id: string; open_reports: number }> };
     expect(rosterA.crew.find((row) => row.crew_id === "demo-crew-3")?.open_reports).toBe(1);
 
-    const sessionB = (await (await demoLogin("flight_medical_officer")).json()) as { token: string };
+    const sessionB = await signInDemoForRole("flight_medical_officer");
     const seenByB = (await (
-      await SELF.fetch("https://example.com/api/reports", {
-        headers: { Authorization: `Bearer ${sessionB.token}` },
-      })
+      await SELF.fetch("https://example.com/api/reports", { headers: authHeaders(sessionB) })
     ).json()) as { reports: Array<{ client_id: string; status: string }> };
-    expect(seenByB.reports.find((row) => row.client_id === "seed-demo-report-emergency")?.status).toBe(
-      "delivered"
-    );
+    expect(seenByB.reports.find((row) => row.client_id === "seed-demo-report-emergency")?.status).toBe("delivered");
     const rosterB = (await (
-      await SELF.fetch("https://example.com/api/crew/roster", {
-        headers: { Authorization: `Bearer ${sessionB.token}` },
-      })
+      await SELF.fetch("https://example.com/api/crew/roster", { headers: authHeaders(sessionB) })
     ).json()) as { crew: Array<{ crew_id: string; open_reports: number }> };
     expect(rosterB.crew.find((row) => row.crew_id === "demo-crew-3")?.open_reports).toBe(2);
   });

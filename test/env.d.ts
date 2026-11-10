@@ -7,5 +7,8 @@ declare module "cloudflare:test" {
     DB: D1Database;
     TEST_MIGRATIONS: D1Migration[];
     API_KEY: string;
+    BETTER_AUTH_SECRET: string;
+    BETTER_AUTH_URL: string;
+    DEMO_PASSWORD: string;
   }
 }
