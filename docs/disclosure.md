@@ -19,6 +19,9 @@ All of the work below was done 2026-11-07 to 2026-11-12, before the 2026-11-14 e
 - Phases 0–6 (core, model, server, storage, login, self-check, emergency, content,
   settings, explanations, import, Bluetooth, voice, gamification, camera,
   attachments): 2026-11-08 to 2026-11-12;
+- frontend redesign (new look, Home health cards, 3D body view) and its fixes:
+  2026-11-10 to 2026-11-11;
+- guided daily check, NASA shuttle background and fixes: 2026-11-12;
 - model swap: scheduled 2026-11-13.
 
 The author has an open question with the Local Event organiser about work started
@@ -49,12 +52,40 @@ critical), so the demo shows each status:
   with the author's key for the explanations.
 - **Muse Code with `muse-spark-1.3-contributor`** (Meta): wrote the code, tests and
   progress reports from the approved design.
+- **Command Code with DeepSeek V4 Flash**: wrote the frontend redesign code and tests
+  from Claude's redesign plan, one step at a time, and the 2026-11-12 daily check and
+  shuttle changes from Claude's change request.
+- **Claude** also wrote the redesign plan and run-book, audited every redesign step,
+  wrote the script that prepares the 3D body models (section "Third-party assets"),
+  and deployed the redesign fixes on the author's approval.
 - **`muse-spark-1.3-contributor`** (Meta): generated the explanations at build time.
 - The 33 shipped explanations were reviewed by **Claude, an AI**, on the author's
   instruction (`docs/audits/review-2026-11-08-explanations.md`), not by a human.
 - Contributor mode lets Meta use the submitted prompts and content for training. Only
   public knowledge-base text was sent for the explanations (design decision F); no crew
   data was.
+
+## Third-party assets
+
+- **3D body models** (`starplus-frontend/public/models/body-female.glb` and
+  `body-male.glb`, shown on the Body page): made from **Human Base Meshes v1.4.1** by
+  Blender Studio and community contributors, released as **CC0** (public domain)
+  (https://www.blender.org/download/demo-files/). The meshes were reduced and given a
+  plain material by `starplus-frontend/tools/build-body-model.py` in Blender 5.2. The
+  **hair is not from the bundle**: that script builds it from the head's own surface. The
+  script was written by Claude, an AI; no AI image or 3D generator was used. Full source,
+  checksum and steps: `starplus-frontend/public/models/CREDITS.md`.
+- **Space Shuttle model** (`starplus-frontend/public/models/space-shuttle-d*.glb`, the
+  faint background flight): "Space Shuttle (D)", its "eng" engine bell and the two
+  "door" files from **NASA 3D Resources** (https://github.com/nasa/NASA-3D-Resources),
+  NASA, free and without copyright; used unmodified (sizes and SHA-256 in
+  `starplus-frontend/public/models/CREDITS.md`). The model shows the NASA insignia and
+  the US flag as part of NASA's own model; this does not imply NASA endorsement of STAR
+  PLUS. The engine and door placement was measured by Claude, an AI.
+- **Draco mesh decoder** (`starplus-frontend/public/draco/`): Google's Draco decoder as
+  shipped with three.js 0.187.0, Apache-2.0, unmodified.
+- **Satoshi font** (`starplus-frontend/public/fonts`): self-hosted under the Fontshare
+  free licence.
 
 ## No clinical review
 
