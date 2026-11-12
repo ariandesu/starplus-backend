@@ -236,7 +236,12 @@ export async function handleConsult(request: Request, env: Env, requestId: strin
   let answer: string | null;
   try {
     answer = await answerSafely(key, prompt);
-  } catch {
+  } catch (err) {
+    console.error(
+      "consult meta failed",
+      err instanceof Error ? err.message : "unknown",
+      `key_len=${key.length}`
+    );
     return error(502, `The assistant is unavailable right now. ${FLIGHT_SURGEON_LINE}`, request, requestId);
   }
   if (!answer) {
