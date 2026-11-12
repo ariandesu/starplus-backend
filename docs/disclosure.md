@@ -61,20 +61,36 @@ critical), so the demo shows each status:
 - **`muse-spark-1.3-contributor`** (Meta): generated the explanations at build time.
 - The 33 shipped explanations were reviewed by **Claude, an AI**, on the author's
   instruction (`docs/audits/review-2026-11-08-explanations.md`), not by a human.
-- Contributor mode lets Meta use the submitted prompts and content for training. Only
-  public knowledge-base text was sent for the explanations (design decision F); no crew
-  data was.
+- Contributor mode lets Meta use the submitted prompts and content for training. For the
+  build-time explanations, only public knowledge-base text was sent (design decision F);
+  no crew data was.
+- **`muse-spark-1.3-contributor`** (Meta) also answers live "Ask about your result"
+  questions and explains formulary medicines through the Worker's `/api/consult` proxy,
+  added 2026-11-12. It receives only public knowledge-base or formulary text (never
+  doses) plus the user's typed question; the app warns users not to type names,
+  readings or personal details. In **Contributor mode** Meta may use these prompts,
+  including typed questions, for training. Answers pass the same filters as the
+  build-time explanations (an answer that fails them twice is not shown), are labelled
+  "AI-written at your request, not reviewed", and are limited to 10 per session per
+  hour, 30 per crew per hour and 300 per day in total. This is a recorded deviation from
+  the design (`docs/designs/deviations.md`, 2026-11-12, live Consult).
+- **AI image generator (tool to be named by the author):** made the three decorative
+  images (`starplus-frontend/public/hero-iss.jpg`, `sidebar-earth.jpg`,
+  `login-cupola.jpg`: the dashboard hero, the sidebar and the login panel), at the
+  author's request. They are illustrations, not photographs of real missions.
 
 ## Third-party assets
 
-- **3D body models** (`starplus-frontend/public/models/body-female.glb` and
-  `body-male.glb`, shown on the Body page): made from **Human Base Meshes v1.4.1** by
-  Blender Studio and community contributors, released as **CC0** (public domain)
-  (https://www.blender.org/download/demo-files/). The meshes were reduced and given a
-  plain material by `starplus-frontend/tools/build-body-model.py` in Blender 5.2. The
-  **hair is not from the bundle**: that script builds it from the head's own surface. The
-  script was written by Claude, an AI; no AI image or 3D generator was used. Full source,
-  checksum and steps: `starplus-frontend/public/models/CREDITS.md`.
+- **3D body models** (`starplus-frontend/public/models/body-male.glb` and
+  `body-female.glb`, shown on the Body page): "Eric Rigged 001 - Rigged 3D Business Man"
+  and "Claudia Rigged 002 - 3D Rigged Business Women" by **Renderpeople**, from
+  Sketchfab (official @renderpeople account), licensed under **CC BY 4.0**
+  (https://creativecommons.org/licenses/by/4.0/); credited on the Body page. Modified:
+  rig removed (pose baked), textures reduced to 1,024 px, converted to a plain GLB by
+  `starplus-frontend/tools/build-renderpeople-body.py`, a script written by Claude, an AI.
+  Sources, checksums and steps: `starplus-frontend/public/models/CREDITS.md`. (They
+  replaced, on 2026-11-12, earlier models made from Blender Studio's CC0 Human Base
+  Meshes.)
 - **Space Shuttle model** (`starplus-frontend/public/models/space-shuttle-d*.glb`, the
   faint background flight): "Space Shuttle (D)", its "eng" engine bell and the two
   "door" files from **NASA 3D Resources** (https://github.com/nasa/NASA-3D-Resources),

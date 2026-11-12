@@ -96,3 +96,27 @@ touching HANDOFF section 5 needs approval before merging.
     and only flags "normal"/"fine" as softening when the source lacks them.
     `PROMPT_VERSION` stays `"1"` so the 27 reviewed cache entries keep their keys.
 *   **Rule impact:** none (build-time tooling only; shipped cache unchanged).
+
+## 2026-11-12 — live Consult: Meta answers questions at run time (author's decision, 2026-11-13)
+
+*   **Design section:** HANDOFF rule 3 ("No LLM at run time"); NFR security ("no health
+    data or free text is sent to an LLM").
+*   **What the design says:** the app never calls Meta; only `tools/pregenerate.ts` does,
+    at build time, with public cited content.
+*   **What is implemented instead:** the Worker's `/api/consult` proxy (added 2026-11-12)
+    sends public knowledge-base or formulary text (never doses) plus the user's typed
+    question to `muse-spark-1.3-contributor`, for "Ask about your result" and the medicine
+    explainer. The author chose to keep it after the 2026-11-13 audit
+    (`docs/audits/audit-2026-11-13-state.md`, S1–S3).
+*   **Mitigations:**
+    *   an in-app warning not to type names, readings or personal details;
+    *   no crew data or doses in prompts;
+    *   output filters with one retry, failing closed;
+    *   an "AI-written at your request, not reviewed" label;
+    *   server-side limits: 10 per session per hour, 30 per crew per hour, 300 per day.
+
+    The 300-per-day cap protects the key.
+*   **Rule impact:** a deviation from rule 3 and the NFR, accepted by the author.
+    Emergency mode, every status decision and the shipped explanations stay LLM-free.
+    Contributor mode lets Meta train on these prompts; the disclosure says so.
+
