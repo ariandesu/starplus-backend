@@ -29,4 +29,6 @@ export interface Env {
   PBKDF2_ITERATIONS?: string;
   /** Sign-in attempts per minute per address (default 30; raised for load tests only). */
   SIGNIN_RATE_MAX?: string;
+  /** Meta Muse Spark key for /api/consult (`wrangler secret put META_MODEL_API_KEY`). Never in git. */
+  META_MODEL_API_KEY?: string;
 }

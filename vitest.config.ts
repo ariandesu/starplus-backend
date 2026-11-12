@@ -45,6 +45,7 @@ export default defineConfig({
                     BETTER_AUTH_URL: "https://example.com",
                     DEMO_PASSWORD: "demo-password-123",
                     RATE_LIMIT_MODE: "off",
+                    META_MODEL_API_KEY: "test-meta-key",
                   },
                 },
               },

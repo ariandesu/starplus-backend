@@ -11,6 +11,7 @@ import { ensureDemoUsers, resetAndSeedDemo } from "./demo";
 import type { Env } from "./env";
 import { checkAuth, corsHeaders, error, json, preflight, readJsonObject, requestStore } from "./http";
 import { handleBatch, handleSync } from "./sync";
+import { handleConsult } from "./consult";
 import { handleAckReport, handleGetAttachment, handleGetReports, handlePostAttachment, handlePostReport } from "./reports";
 import { checkApiLimit, checkAuthLimit, checkDemoLimit } from "./ratelimit";
 import { parseLimit, validateAstronaut, validateId, validateVitals } from "./validate";
@@ -123,6 +124,14 @@ async function handle(request: Request, env: Env): Promise<Response> {
     const limited = await checkApiLimit(request, env, requestId);
     if (limited) return limited;
     return handleSync(request, env, requestId, url);
+  }
+
+  // ---- AI consultancy (demo, 10/hour per crew+device) ----
+  if (path === "/api/consult") {
+    if (method !== "POST") return error(405, "Method not allowed", request, requestId);
+    const limited = await checkApiLimit(request, env, requestId);
+    if (limited) return limited;
+    return handleConsult(request, env, requestId);
   }
 
   // ---- Reports ----
