@@ -131,7 +131,8 @@ const BASE_RULES = [
   "Explain in plain words using only the sources below.",
   "Never invent numbers, units, doses, routes or times that are not in the sources.",
   "Never state a medicine strength, amount or dosing schedule.",
-  "Never soften a health status: do not say normal, fine, nothing to worry about, or all clear.",
+  "Keep every safety qualifier from the sources word for word, including 'normal', 'normally', 'at least', 'no sooner than', 'only if', 'never', 'do not' and 'at once'. Never describe the reader's own result as normal or fine, and never say 'nothing to worry about', 'do not worry' or 'all clear'.",
+  "Do not add source labels or reference numbers such as [1].",
   "No diagnosis. End with one line telling the reader to follow the flight surgeon or mission protocol.",
   "Keep the answer under 120 words.",
 ].join(" ");

@@ -1,6 +1,10 @@
 import { SELF, env } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildMedicinePrompt, buildQuestionPrompt, CONSULT_MODEL, handleConsult } from "../../src/consult.ts";
+import { filterExplanation } from "../../core/explain/filters.ts";
+import cprKb from "../../core/content/kb/firstaid-cpr.json" with { type: "json" };
+import unresponsiveKb from "../../core/content/kb/firstaid-unresponsive.json" with { type: "json" };
+import spo2Kb from "../../core/content/kb/measure-spo2.json" with { type: "json" };
 import heartRateKb from "../../core/content/kb/measure-heart-rate.json" with { type: "json" };
 import { postJson, signInCrew } from "./helpers";
 
@@ -333,6 +337,61 @@ describe("consult", () => {
       await res.text();
     }
     expect(metaCalls).toHaveLength(0);
+  });
+
+  it("asks the model to keep safety qualifiers and to add no source labels", () => {
+    for (const entry of [heartRateKb, cprKb, unresponsiveKb]) {
+      const prompt = buildQuestionPrompt("Why?", [entry as never]);
+      expect(prompt.system).toContain("Keep every safety qualifier");
+      expect(prompt.system).not.toContain("do not say normal");
+      expect(prompt.system).toContain("Do not add source labels or reference numbers such as [1].");
+    }
+  });
+
+  it("accepts a heart-rate answer that keeps 'A normal resting rate'", async () => {
+    const { token } = await freshCrew();
+    metaReply = (heartRateKb as { text: string[] }).text[0];
+    const res = await consult(token, {
+      kind: "question",
+      question: "Why does resting heart rate matter in space?",
+      entry_ids: ["measure-heart-rate"],
+      device_id: "keep-normal-device",
+    });
+    expect(res.status).toBe(200);
+    await res.json();
+  });
+
+  it("still rejects calling the reader's own result normal", async () => {
+    const sourceText = (spo2Kb as { text: string[] }).text.join(" ");
+    expect(filterExplanation("Your result is normal.", sourceText).join("\n")).toContain(
+      "softens the result: 'normal'"
+    );
+    const { token } = await freshCrew();
+    metaReply = "Your result is normal.";
+    const res = await consult(token, {
+      kind: "question",
+      question: "What is oxygen saturation?",
+      entry_ids: ["measure-spo2"],
+      device_id: "soften-device",
+    });
+    expect(res.status).toBe(502);
+    await res.text();
+  });
+
+  it("still rejects a CPR answer that drops 'normal' from the source", async () => {
+    const sourceText = (cprKb as { text: string[] }).text.join(" ");
+    metaReply =
+      "Start compressions at once if there is no breathing: heel of the hand on the centre of the chest.";
+    expect(filterExplanation(metaReply, sourceText).join("\n")).toContain("drops 'normal'");
+    const { token } = await freshCrew();
+    const res = await consult(token, {
+      kind: "question",
+      question: "How do I start CPR?",
+      entry_ids: ["firstaid-cpr"],
+      device_id: "must-keep-device",
+    });
+    expect(res.status).toBe(502);
+    await res.text();
   });
 
   it("builds prompts from public sources only", () => {
