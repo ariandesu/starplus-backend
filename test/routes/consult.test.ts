@@ -1,5 +1,5 @@
 import { SELF, env } from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildMedicinePrompt, buildQuestionPrompt, CONSULT_MODEL, handleConsult } from "../../src/consult.ts";
 import heartRateKb from "../../core/content/kb/measure-heart-rate.json" with { type: "json" };
 import { postJson, signInCrew } from "./helpers";
@@ -283,6 +283,28 @@ describe("consult", () => {
     const text = await res.text();
     expect(text.toLowerCase()).toContain("flight surgeon");
     expect(metaCalls).toHaveLength(2);
+  });
+
+  it("logs no key material when Meta fails", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const { token } = await freshCrew();
+      metaStatus = 500;
+      const res = await consult(token, {
+        kind: "question",
+        question: "What is heart rate?",
+        entry_ids: ["measure-heart-rate"],
+        device_id: "log-device",
+      });
+      expect(res.status).toBe(502);
+      await res.text();
+      const logged = spy.mock.calls.flat().map((arg) => String(arg));
+      expect(logged.some((line) => line.includes("key_len"))).toBe(false);
+      expect(logged.some((line) => line.includes("test-meta-key"))).toBe(false);
+      expect(logged.some((line) => line.includes("consult meta failed"))).toBe(true);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("502s when Meta is down", async () => {

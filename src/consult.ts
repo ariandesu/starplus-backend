@@ -175,6 +175,16 @@ export function buildMedicinePrompt(entry: FormularyEntry): ConsultPrompt {
   };
 }
 
+/** A non-2xx reply from Meta, carrying only the status. */
+class MetaStatusError extends Error {
+  readonly status: number;
+
+  constructor(status: number) {
+    super(`Meta API ${status}`);
+    this.status = status;
+  }
+}
+
 async function completeMeta(key: string, prompt: ConsultPrompt, strict: boolean): Promise<string> {
   const system = strict
     ? `${prompt.system} If a detail is not in the sources, leave it out rather than guessing.`
@@ -192,18 +202,12 @@ async function completeMeta(key: string, prompt: ConsultPrompt, strict: boolean)
       ],
     }),
   });
-  if (!res.ok) throw new Error(`Meta API ${res.status}`);
+  if (!res.ok) throw new MetaStatusError(res.status);
   const data = (await res.json()) as {
     choices?: { message?: { content?: unknown }; finish_reason?: unknown }[];
   };
   const choice = data.choices?.[0];
   const content = typeof choice?.message?.content === "string" ? choice.message.content.trim() : "";
-  console.error(
-    "consult meta shape",
-    `choices=${Array.isArray(data.choices) ? data.choices.length : "none"}`,
-    `finish=${String(choice?.finish_reason ?? "none")}`,
-    `content_len=${content.length}`
-  );
   if (!content) throw new Error("Meta API returned no content");
   return content;
 }
@@ -290,11 +294,7 @@ export async function handleConsult(request: Request, env: Env, requestId: strin
   try {
     answer = await answerSafely(key, prompt);
   } catch (err) {
-    console.error(
-      "consult meta failed",
-      err instanceof Error ? err.message : "unknown",
-      `key_len=${key.length}`
-    );
+    console.error("consult meta failed", err instanceof MetaStatusError ? err.status : "unknown");
     return error(502, `The assistant is unavailable right now. ${FLIGHT_SURGEON_LINE}`, request, requestId);
   }
   if (!answer) {
