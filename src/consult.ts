@@ -93,7 +93,6 @@ const META_URL = "https://api.meta.ai/v1/chat/completions";
 const MAX_PER_HOUR = 10;
 const MAX_QUESTION_CHARS = 500;
 const MAX_ENTRY_IDS = 5;
-const MAX_TOKENS = 300;
 const FLIGHT_SURGEON_LINE = "For more help, contact your flight surgeon.";
 
 const BASE_RULES = [
@@ -149,13 +148,13 @@ async function completeMeta(key: string, prompt: ConsultPrompt, strict: boolean)
   const system = strict
     ? `${prompt.system} If a detail is not in the sources, leave it out rather than guessing.`
     : prompt.system;
+  // Same shape as tools/pregenerate.ts (the known-working call): model and
+  // messages only, no extra parameters.
   const res = await fetch(META_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
     body: JSON.stringify({
       model: CONSULT_MODEL,
-      temperature: 0.2,
-      max_tokens: MAX_TOKENS,
       messages: [
         { role: "system", content: system },
         { role: "user", content: prompt.user },
@@ -163,8 +162,17 @@ async function completeMeta(key: string, prompt: ConsultPrompt, strict: boolean)
     }),
   });
   if (!res.ok) throw new Error(`Meta API ${res.status}`);
-  const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  const content = data.choices?.[0]?.message?.content?.trim() ?? "";
+  const data = (await res.json()) as {
+    choices?: { message?: { content?: unknown }; finish_reason?: unknown }[];
+  };
+  const choice = data.choices?.[0];
+  const content = typeof choice?.message?.content === "string" ? choice.message.content.trim() : "";
+  console.error(
+    "consult meta shape",
+    `choices=${Array.isArray(data.choices) ? data.choices.length : "none"}`,
+    `finish=${String(choice?.finish_reason ?? "none")}`,
+    `content_len=${content.length}`
+  );
   if (!content) throw new Error("Meta API returned no content");
   return content;
 }
