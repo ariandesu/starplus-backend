@@ -180,12 +180,12 @@ describe("consult", () => {
     expect(metaCalls[0].user).toContain("Acetaminophen");
   });
 
-  it("allows 10 requests an hour, then 429s with the flight-surgeon line", async () => {
+  it("stops one session at the session limit with a fresh device_id on every call", async () => {
     const { token } = await freshCrew();
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 3; i++) {
       const res = await consult(
         token,
-        { kind: "medicine", medicine_id: "ibuprofen", device_id: "budget-device" },
+        { kind: "medicine", medicine_id: "ibuprofen", device_id: `random-device-${uuid()}` },
         "10.9.0.4"
       );
       expect(res.status).toBe(200);
@@ -193,12 +193,59 @@ describe("consult", () => {
     }
     const limited = await consult(
       token,
-      { kind: "medicine", medicine_id: "ibuprofen", device_id: "budget-device" },
+      { kind: "medicine", medicine_id: "ibuprofen", device_id: `random-device-${uuid()}` },
       "10.9.0.4"
     );
     expect(limited.status).toBe(429);
     const text = await limited.text();
-    expect(text).toContain("10");
+    expect(text).toContain("3");
+    expect(text.toLowerCase()).toContain("flight surgeon");
+    expect(limited.headers.get("Retry-After")).not.toBeNull();
+  });
+
+  it("stops a crew member at the crew limit across sessions", async () => {
+    const { crewId, token: first } = await freshCrew();
+    const second = await signInCrew(crewId, "10.9.0.1");
+    const ask = (token: string, device: string) =>
+      consult(token, { kind: "medicine", medicine_id: "ibuprofen", device_id: device }, "10.9.0.4");
+    for (let i = 0; i < 3; i++) {
+      const res = await ask(first, `crew-a-${uuid()}`);
+      expect(res.status).toBe(200);
+      await res.json();
+    }
+    for (let i = 0; i < 2; i++) {
+      const res = await ask(second, `crew-b-${uuid()}`);
+      expect(res.status).toBe(200);
+      await res.json();
+    }
+    const limited = await ask(second, `crew-b-${uuid()}`);
+    expect(limited.status).toBe(429);
+    const text = await limited.text();
+    expect(text).toContain("for this crew");
+    expect(text.toLowerCase()).toContain("flight surgeon");
+    expect(limited.headers.get("Retry-After")).not.toBeNull();
+  });
+
+  it("stops the whole service at the global limit", async () => {
+    for (let i = 0; i < 8; i++) {
+      const { token } = await freshCrew();
+      const res = await consult(
+        token,
+        { kind: "medicine", medicine_id: "ibuprofen", device_id: `global-${uuid()}` },
+        "10.9.0.5"
+      );
+      expect(res.status).toBe(200);
+      await res.json();
+    }
+    const { token } = await freshCrew();
+    const limited = await consult(
+      token,
+      { kind: "medicine", medicine_id: "ibuprofen", device_id: `global-${uuid()}` },
+      "10.9.0.5"
+    );
+    expect(limited.status).toBe(429);
+    const text = await limited.text();
+    expect(text).toContain("today's limit");
     expect(text.toLowerCase()).toContain("flight surgeon");
     expect(limited.headers.get("Retry-After")).not.toBeNull();
   });

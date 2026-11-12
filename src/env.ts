@@ -31,4 +31,10 @@ export interface Env {
   SIGNIN_RATE_MAX?: string;
   /** Meta Muse Spark key for /api/consult (`wrangler secret put META_MODEL_API_KEY`). Never in git. */
   META_MODEL_API_KEY?: string;
+  /** Consult calls per session per rolling hour (default 10; tests only). */
+  CONSULT_SESSION_HOURLY?: string;
+  /** Consult calls per crew member per rolling hour (default 30; tests only). */
+  CONSULT_CREW_HOURLY?: string;
+  /** Consult calls for the whole service per rolling 24 hours (default 300; tests only). */
+  CONSULT_GLOBAL_DAILY?: string;
 }

@@ -5,9 +5,12 @@
  * the frontend talks to this proxy. Only public knowledge-base and formulary
  * text plus the user's own question are ever sent to Meta — never
  * measurements, values, names or report text. Replies pass the same
- * `filterExplanation` filters as the build-time templates, and each
- * crew+device gets 10 requests per rolling hour; past that the answer tells
- * them to contact their flight surgeon.
+ * `filterExplanation` filters as the build-time templates. Three server-side
+ * limits apply, all keyed on data the client cannot change: 10 calls per
+ * session per rolling hour, 30 per crew member per rolling hour, and 300 for
+ * the whole service per rolling 24 hours; past any of them the answer tells
+ * them to contact their flight surgeon. The client's `device_id` is stored
+ * (truncated) for diagnosis only and never decides a limit.
  */
 import type { FormularyEntry, KbCitation, KbEntry } from "@starplus/core";
 import { filterExplanation } from "../core/explain/filters.ts";
@@ -90,10 +93,39 @@ const formularyById = new Map(FORMULARY.map((entry) => [entry.id, entry]));
 
 export const CONSULT_MODEL = "muse-spark-1.3-contributor";
 const META_URL = "https://api.meta.ai/v1/chat/completions";
-const MAX_PER_HOUR = 10;
+const MAX_PER_SESSION_HOUR = 10;
+const MAX_PER_CREW_HOUR = 30;
+const MAX_GLOBAL_DAY = 300;
 const MAX_QUESTION_CHARS = 500;
 const MAX_ENTRY_IDS = 5;
 const FLIGHT_SURGEON_LINE = "For more help, contact your flight surgeon.";
+
+/** Parse-and-default, same pattern as SIGNIN_RATE_MAX in better-auth.ts. */
+function consultLimit(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+interface WindowUse {
+  n: number;
+  oldest: string | null;
+}
+
+/** Calls logged in a rolling window, optionally for one key (a session or a crew). */
+async function windowUse(db: D1Database, keyColumn: string | null, key: string, since: string): Promise<WindowUse> {
+  const filter = keyColumn === null ? "1 = 1" : `${keyColumn} = ?`;
+  const bindings = keyColumn === null ? [since] : [key, since];
+  const row = await db
+    .prepare(`SELECT COUNT(*) AS n, MIN(created_at) AS oldest FROM consult_log WHERE ${filter} AND created_at > ?`)
+    .bind(...bindings)
+    .first<{ n: number; oldest: string | null }>();
+  return { n: row?.n ?? 0, oldest: row?.oldest ?? null };
+}
+
+function retryAfterSeconds(used: WindowUse, windowSeconds: number): number {
+  const elapsed = used.oldest === null ? 0 : Math.floor((Date.now() - Date.parse(used.oldest)) / 1000);
+  return Math.max(60, windowSeconds - elapsed);
+}
 
 const BASE_RULES = [
   "Explain in plain words using only the sources below.",
@@ -215,27 +247,41 @@ export async function handleConsult(request: Request, env: Env, requestId: strin
     prompt = buildMedicinePrompt(entry);
   }
 
+  const limited = (message: string, retryAfter: number) => {
+    const response = error(429, message, request, requestId);
+    response.headers.set("Retry-After", String(retryAfter));
+    return response;
+  };
+
+  const sessionLimit = consultLimit(env.CONSULT_SESSION_HOURLY, MAX_PER_SESSION_HOUR);
+  const crewLimit = consultLimit(env.CONSULT_CREW_HOURLY, MAX_PER_CREW_HOUR);
+  const globalLimit = consultLimit(env.CONSULT_GLOBAL_DAILY, MAX_GLOBAL_DAY);
   const hourAgo = new Date(Date.now() - 3_600_000).toISOString();
-  const used = await env.DB.prepare(
-    "SELECT COUNT(*) AS n, MIN(created_at) AS oldest FROM consult_log WHERE crew_id = ? AND device_id = ? AND created_at > ?"
-  )
-    .bind(session.crew_id, deviceId, hourAgo)
-    .first<{ n: number; oldest: string | null }>();
-  if ((used?.n ?? 0) >= MAX_PER_HOUR) {
-    const retryAfter = used?.oldest
-      ? Math.max(60, 3600 - Math.floor((Date.now() - Date.parse(used.oldest)) / 1000))
-      : 3600;
-    const limited = error(
-      429,
-      `Question limit reached for this hour (10). ${FLIGHT_SURGEON_LINE}`,
-      request,
-      requestId
+  const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
+
+  const sessionUse = await windowUse(env.DB, "session_id", session.session_id, hourAgo);
+  if (sessionUse.n >= sessionLimit) {
+    return limited(
+      `Question limit reached for this hour (${sessionLimit}). ${FLIGHT_SURGEON_LINE}`,
+      retryAfterSeconds(sessionUse, 3600)
     );
-    limited.headers.set("Retry-After", String(retryAfter));
-    return limited;
   }
-  await env.DB.prepare("INSERT INTO consult_log (crew_id, device_id, created_at) VALUES (?, ?, ?)")
-    .bind(session.crew_id, deviceId, new Date().toISOString())
+  const crewUse = await windowUse(env.DB, "crew_id", session.crew_id, hourAgo);
+  if (crewUse.n >= crewLimit) {
+    return limited(
+      `Question limit reached for this hour (${crewLimit} for this crew). ${FLIGHT_SURGEON_LINE}`,
+      retryAfterSeconds(crewUse, 3600)
+    );
+  }
+  const globalUse = await windowUse(env.DB, null, "", dayAgo);
+  if (globalUse.n >= globalLimit) {
+    return limited(
+      `The assistant has reached today's limit. ${FLIGHT_SURGEON_LINE}`,
+      retryAfterSeconds(globalUse, 86_400)
+    );
+  }
+  await env.DB.prepare("INSERT INTO consult_log (crew_id, device_id, session_id, created_at) VALUES (?, ?, ?, ?)")
+    .bind(session.crew_id, deviceId, session.session_id, new Date().toISOString())
     .run();
 
   const key = env.META_MODEL_API_KEY;
