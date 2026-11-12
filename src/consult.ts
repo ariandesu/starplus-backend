@@ -166,10 +166,9 @@ export function buildMedicinePrompt(entry: FormularyEntry): ConsultPrompt {
     `Purpose: ${entry.purpose}`,
     `Side effects: ${entry.side_effects}`,
     `Interactions: ${entry.interactions}`,
-    `Dose: ${entry.dose}`,
   ].join("\n");
   return {
-    system: `You explain onboard medicines in plain words. ${BASE_RULES} Cover three headings: Components, Use, Side effects.`,
+    system: `You explain onboard medicines in plain words. ${BASE_RULES} Cover three headings: Components, Use, Side effects. Do not mention doses, strengths or schedules; the app shows the quoted dose separately.`,
     user: `Formulary entry:\n${sourceText}\n\nExplain the components, what it is used for, and its side effects in plain words.`,
     sourceText,
     citations: entry.citations,

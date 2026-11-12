@@ -180,6 +180,28 @@ describe("consult", () => {
     expect(metaCalls[0].user).toContain("Acetaminophen");
   });
 
+  it("keeps doses out of the medicine prompt and fails closed on a dose reply", async () => {
+    const prompt = buildMedicinePrompt({
+      id: "dose-med",
+      name: "Dose Med",
+      purpose: "Use.",
+      side_effects: "Effects.",
+      interactions: "None.",
+      dose: "500 mg every 6 hours",
+      citations: [],
+    });
+    for (const text of [prompt.user, prompt.system, prompt.sourceText]) {
+      expect(text).not.toContain("500");
+      expect(text).not.toContain("every 6 hours");
+    }
+    const { token } = await freshCrew();
+    metaReply = "Take 500 mg now, and another 500 mg later.";
+    const res = await consult(token, { kind: "medicine", medicine_id: "acetaminophen", device_id: "dose-device" });
+    expect(res.status).toBe(502);
+    const text = await res.text();
+    expect(text.toLowerCase()).toContain("flight surgeon");
+  });
+
   it("stops one session at the session limit with a fresh device_id on every call", async () => {
     const { token } = await freshCrew();
     for (let i = 0; i < 3; i++) {
