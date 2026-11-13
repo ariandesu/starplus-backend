@@ -38,15 +38,15 @@ const SYNTHETIC_COLUMNS: Record<string, string> = {
   body_mass_kg: "body_mass",
   hydration_urine_specific_gravity: "urine_specific_gravity",
   stress_score_0_100: "stress_score",
+  cabin_co2_mmHg: "cabin_co2",
+  cabin_o2_mmHg: "cabin_o2",
+  cabin_temp_C: "cabin_temperature",
 };
 
 const EXTRA_DAILY: Array<{ metric: string; source: Measurement["source"]; value: number }> = [
   { metric: "water_intake", source: "manual", value: 2.0 },
   { metric: "calories", source: "manual", value: 2200 },
   { metric: "reaction_time", source: "test", value: 260 },
-  { metric: "cabin_co2", source: "manual", value: 2.3 },
-  { metric: "cabin_o2", source: "manual", value: 159 },
-  { metric: "cabin_temperature", source: "manual", value: 22.5 },
 ];
 
 /** A dosimeter is read occasionally, not daily; sparse readings never baseline. */

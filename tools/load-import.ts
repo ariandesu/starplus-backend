@@ -62,7 +62,10 @@ function uuidFrom(seed: string): string {
 }
 
 function parseCsv(text: string): Array<Record<string, string>> {
-  const lines = text.trim().split("\n");
+  const lines = text
+    .trim()
+    .split("\n")
+    .map((line) => line.replace(/\r$/, ""));
   const headers = lines[0].split(",");
   return lines.slice(1).map((line) => {
     const cells = line.split(",");

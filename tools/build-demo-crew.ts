@@ -23,6 +23,9 @@ const COLUMN_TO_CODE: Record<string, string> = {
   body_mass_kg: "body_mass",
   hydration_urine_specific_gravity: "urine_specific_gravity",
   stress_score_0_100: "stress_score",
+  cabin_co2_mmHg: "cabin_co2",
+  cabin_o2_mmHg: "cabin_o2",
+  cabin_temp_C: "cabin_temperature",
 };
 
 const UNIT_FOR: Record<string, string> = {
@@ -41,6 +44,9 @@ const UNIT_FOR: Record<string, string> = {
   body_mass: "kg",
   urine_specific_gravity: "",
   stress_score: "score",
+  cabin_co2: "mmHg",
+  cabin_o2: "mmHg",
+  cabin_temperature: "°C",
 };
 
 function uuidFrom(seed: string): string {
@@ -49,7 +55,10 @@ function uuidFrom(seed: string): string {
 }
 
 function parseCsv(text: string): Array<Record<string, string>> {
-  const lines = text.trim().split("\n");
+  const lines = text
+    .trim()
+    .split("\n")
+    .map((line) => line.replace(/\r$/, ""));
   const headers = lines[0].split(",");
   return lines.slice(1).map((line) => {
     const cells = line.split(",");

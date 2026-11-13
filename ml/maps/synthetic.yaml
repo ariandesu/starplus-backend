@@ -19,3 +19,6 @@ columns:
   body_mass_kg: { code: body_mass }
   hydration_urine_specific_gravity: { code: urine_specific_gravity }
   stress_score_0_100: { code: stress_score }
+  cabin_co2_mmHg: { code: cabin_co2 }
+  cabin_o2_mmHg: { code: cabin_o2 }
+  cabin_temp_C: { code: cabin_temperature }

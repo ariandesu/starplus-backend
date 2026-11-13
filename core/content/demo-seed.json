@@ -25,7 +25,10 @@
       "body_weight_lb": "173.22",
       "hydration_urine_specific_gravity": "1.0131",
       "stress_score_0_100": "39.6",
-      "sick/fit": "0"
+      "sick/fit": "0",
+      "cabin_co2_mmHg": "2.3",
+      "cabin_o2_mmHg": "159",
+      "cabin_temp_C": "22.5"
     },
     {
       "record_id": "SYN-00002",
@@ -207,7 +210,10 @@
           "body_weight_lb": "174.25",
           "hydration_urine_specific_gravity": "1.0213",
           "stress_score_0_100": "43.1",
-          "sick/fit": "0"
+          "sick/fit": "0",
+          "cabin_co2_mmHg": "2.3",
+          "cabin_o2_mmHg": "159",
+          "cabin_temp_C": "22.5"
         },
         {
           "record_id": "SYN-00009",
@@ -389,7 +395,10 @@
           "body_weight_lb": "172.66",
           "hydration_urine_specific_gravity": "1.0189",
           "stress_score_0_100": "41.2",
-          "sick/fit": "0"
+          "sick/fit": "0",
+          "cabin_co2_mmHg": "2.3",
+          "cabin_o2_mmHg": "159",
+          "cabin_temp_C": "22.5"
         },
         {
           "record_id": "SYN-00016",
@@ -571,7 +580,10 @@
           "body_weight_lb": "157.48",
           "hydration_urine_specific_gravity": "1.0167",
           "stress_score_0_100": "48.0",
-          "sick/fit": "0"
+          "sick/fit": "0",
+          "cabin_co2_mmHg": "2.3",
+          "cabin_o2_mmHg": "159",
+          "cabin_temp_C": "22.5"
         },
         {
           "record_id": "SYN-00023",
