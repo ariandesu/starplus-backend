@@ -34,6 +34,9 @@ import hazardIsolation from "../core/content/kb/hazard-isolation-confinement.jso
 import hazardRadiation from "../core/content/kb/hazard-radiation.json" with { type: "json" };
 import measureActivity from "../core/content/kb/measure-activity.json" with { type: "json" };
 import measureBodyMass from "../core/content/kb/measure-body-mass.json" with { type: "json" };
+import measureCabinCo2 from "../core/content/kb/measure-cabin-co2.json" with { type: "json" };
+import measureCabinO2 from "../core/content/kb/measure-cabin-o2.json" with { type: "json" };
+import measureCabinTemperature from "../core/content/kb/measure-cabin-temperature.json" with { type: "json" };
 import measureCalories from "../core/content/kb/measure-calories.json" with { type: "json" };
 import measureDiastolic from "../core/content/kb/measure-diastolic-bp.json" with { type: "json" };
 import measureGlucose from "../core/content/kb/measure-glucose.json" with { type: "json" };
@@ -69,6 +72,9 @@ const KB: Record<string, KbEntry> = {
   "hazard-radiation": hazardRadiation as KbEntry,
   "measure-activity": measureActivity as KbEntry,
   "measure-body-mass": measureBodyMass as KbEntry,
+  "measure-cabin-co2": measureCabinCo2 as KbEntry,
+  "measure-cabin-o2": measureCabinO2 as KbEntry,
+  "measure-cabin-temperature": measureCabinTemperature as KbEntry,
   "measure-calories": measureCalories as KbEntry,
   "measure-diastolic-bp": measureDiastolic as KbEntry,
   "measure-glucose": measureGlucose as KbEntry,

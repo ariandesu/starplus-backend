@@ -356,6 +356,57 @@
       "hazards": ["altered_gravity"],
       "guidance_key": "measure-calories",
       "aliases": ["calories_kcal", "energy_kcal"]
+    },
+    {
+      "code": "cabin_co2",
+      "label": "Cabin carbon dioxide",
+      "unit": "mmHg",
+      "value_type": "numeric",
+      "origin": "observed",
+      "bounds": { "min": 0, "max": 50 },
+      "limits": [],
+      "limit_source": "Baseline scoring only: no published single-reading limit. Spacecraft atmosphere alarms come from the vehicle, not from this app.",
+      "phase_offsets": {},
+      "sd_floor": null,
+      "min_baseline_readings": 5,
+      "body_system": "habitat",
+      "hazards": ["hostile_environment"],
+      "guidance_key": "measure-cabin-co2",
+      "aliases": ["cabin_co2_mmHg", "ppco2"]
+    },
+    {
+      "code": "cabin_o2",
+      "label": "Cabin oxygen",
+      "unit": "mmHg",
+      "value_type": "numeric",
+      "origin": "observed",
+      "bounds": { "min": 0, "max": 300 },
+      "limits": [],
+      "limit_source": "Baseline scoring only: no published single-reading limit. Spacecraft atmosphere alarms come from the vehicle, not from this app.",
+      "phase_offsets": {},
+      "sd_floor": null,
+      "min_baseline_readings": 5,
+      "body_system": "habitat",
+      "hazards": ["hostile_environment"],
+      "guidance_key": "measure-cabin-o2",
+      "aliases": ["cabin_o2_mmHg", "ppo2"]
+    },
+    {
+      "code": "cabin_temperature",
+      "label": "Cabin temperature",
+      "unit": "°C",
+      "value_type": "numeric",
+      "origin": "observed",
+      "bounds": { "min": 0, "max": 50 },
+      "limits": [],
+      "limit_source": "Baseline scoring only: no published single-reading limit.",
+      "phase_offsets": {},
+      "sd_floor": 0.5,
+      "min_baseline_readings": 5,
+      "body_system": "habitat",
+      "hazards": ["hostile_environment"],
+      "guidance_key": "measure-cabin-temperature",
+      "aliases": ["cabin_temperature_c", "cabin_temp"]
     }
   ]
 }
