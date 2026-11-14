@@ -76,3 +76,8 @@ into `ml/data/hackathon/` (do not commit it if its licence forbids it), write
 run `tools/sync-core.sh`, run both repos' tests, and deploy both apps. If anything
 fails, revert `core/content/model.json` and redeploy; the app falls back to limits and
 baselines.
+
+## Licence
+
+Open source under the **MIT License**, see [`LICENSE`](LICENSE). The frontend
+([starplus-frontend](https://github.com/ariandesu/starplus-frontend)) uses the same licence.
